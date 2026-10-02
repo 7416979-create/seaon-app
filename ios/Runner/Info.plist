@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- ==================== 기본 정보 ==================== -->
+    <key>CFBundleDevelopmentRegion</key>
+    <string>ko_KR</string>
+
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+
+    <key>CFBundleName</key>
+    <string>근태관리</string>
+
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+
+    <key>CFBundleVersion</key>
+    <string>1</string>
+
+    <!-- ==================== 위치 권한 ==================== -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>출퇴근 위치 기반 인증을 위해 위치 정보가 필요합니다.</string>
+
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>백그라운드에서 GPS 위치를 추적하기 위해 위치 정보가 필요합니다.</string>
+
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>근태관리를 위해 항상 위치 정보에 접근합니다.</string>
+
+    <!-- ==================== WiFi 권한 ==================== -->
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>회사 WiFi 인증을 위해 로컬 네트워크 접근이 필요합니다.</string>
+
+    <key>NSBonjourServiceTypes</key>
+    <array>
+        <string>_http._tcp</string>
+        <string>_https._tcp</string>
+    </array>
+
+    <!-- ==================== 카메라 권한 ==================== -->
+    <key>NSCameraUsageDescription</key>
+    <string>디지털 서명을 위해 카메라 접근이 필요합니다.</string>
+
+    <!-- ==================== 포토 라이브러리 권한 ==================== -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>서명 이미지 저장을 위해 포토 라이브러리 접근이 필요합니다.</string>
+
+    <!-- ==================== 알림 권한 ==================== -->
+    <key>UIUserInterfaceStyle</key>
+    <string>Light</string>
+
+    <!-- ==================== 백그라운드 모드 ==================== -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>fetch</string>
+        <string>location</string>
+        <string>processing</string>
+    </array>
+
+    <!-- ==================== 런치 스크린 ==================== -->
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+
+    <!-- ==================== 방향 설정 ==================== -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+    </array>
+
+    <!-- ==================== iOS 버전 ==================== -->
+    <key>MinimumOSVersion</key>
+    <string>12.0</string>
+
+    <!-- ==================== 암호화 설정 ==================== -->
+    <key>NSExceptionDomains</key>
+    <dict>
+        <key>localhost</key>
+        <dict>
+            <key>NSIncludesSubdomains</key>
+            <true/>
+            <key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+            <true/>
+        </dict>
+    </dict>
+
+    <!-- ==================== 기타 설정 ==================== -->
+    <key>NSRequiresIPhoneOS</key>
+    <true/>
+
+    <key>UIStatusBarStyle</key>
+    <string>UIStatusBarStyleDarkContent</string>
+
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <false/>
+
+    <!-- 배터리 상태 모니터링 -->
+    <key>UIApplicationExitsOnSuspend</key>
+    <false/>
+
+</dict>
+</plist>

@@ -1,0 +1,29 @@
+# This file tracks properties of this Flutter project.
+# Used by Flutter tooling to track, build and provide better tooling.
+
+version:
+  revision: "2f708cb93aba1c1f9e94e81fbdb46e5f9b8b2bb8"
+  channel: stable
+
+project_type: app
+
+# Tracks metadata about the Flutter files in the project.
+migration:
+  platforms:
+    - platform: root
+      create_revision: 2f708cb93aba1c1f9e94e81fbdb46e5f9b8b2bb8
+      base_revision: 2f708cb93aba1c1f9e94e81fbdb46e5f9b8b2bb8
+    - platform: android
+      create_revision: 2f708cb93aba1c1f9e94e81fbdb46e5f9b8b2bb8
+      base_revision: 2f708cb93aba1c1f9e94e81fbdb46e5f9b8b2bb8
+    - platform: ios
+      create_revision: 2f708cb93aba1c1f9e94e81fbdb46e5f9b8b2bb8
+      base_revision: 2f708cb93aba1c1f9e94e81fbdb46e5f9b8b2bb8
+
+  # User provided section
+
+  # List of Local properties to add to this file:
+  # recipes:
+  #   - tools/flutter/custom_widgets.yaml
+  # properties:
+  #   com.example.custom_test_property: 123
