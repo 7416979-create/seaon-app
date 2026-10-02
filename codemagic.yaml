@@ -1,0 +1,34 @@
+﻿workflows:
+  release:
+    name: SEAON HR Attendance App - Release Build
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      java: 11
+      xcode: latest
+      cocoapods: default
+    triggering:
+      events:
+        - push
+      branch:
+        include_patterns:
+          - main
+          - develop
+    scripts:
+      - name: Get Flutter dependencies
+        script: |
+          flutter pub get
+      - name: Build APK
+        script: |
+          flutter build apk --release
+      - name: Build iOS IPA
+        script: |
+          flutter build ipa --release
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+      - build/ios/ipa/*.ipa
+    publishing:
+      google_play:
+        credentials: Encrypted(...)
+        track: internal
