@@ -23,6 +23,9 @@ dependencies:
   # WiFi 기반 인증 (회사 WiFi 확인)
   network_info_plus: ^4.0.2
 
+  # 네트워크 연결 상태 모니터링
+  connectivity_plus: ^5.0.0
+
   # 백그라운드 작업 (GPS 추적)
   workmanager: ^0.5.1
 

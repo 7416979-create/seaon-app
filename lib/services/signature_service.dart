@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:image/image.dart' as img;
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 
 /// 디지털 서명 서비스
@@ -62,12 +63,10 @@ class SignaturePad extends StatefulWidget {
 
 class _SignaturePadState extends State<SignaturePad> {
   final List<Offset?> _points = [];
-  late GlobalKey<CustomPainterState> _painterKey;
 
   @override
   void initState() {
     super.initState();
-    _painterKey = GlobalKey();
   }
 
   void _clear() {
@@ -78,11 +77,8 @@ class _SignaturePadState extends State<SignaturePad> {
   }
 
   Future<void> _save() async {
-    final painterState = _painterKey.currentState;
-    if (painterState != null) {
-      final imageBytes = await painterState.saveImage();
-      widget.onSignatureSaved(imageBytes);
-    }
+    final imageBytes = await SignaturePainter(points: _points).saveImage();
+    widget.onSignatureSaved(imageBytes);
   }
 
   @override
@@ -196,5 +192,3 @@ class SignaturePainter extends CustomPainter {
     return byteData!.buffer.asUint8List();
   }
 }
-
-import 'dart:ui' as ui;
