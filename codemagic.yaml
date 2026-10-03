@@ -1,13 +1,11 @@
 ﻿workflows:
   android_only:
     name: SEAON HR Attendance App - Android APK Only
-    instance_type: mac_mini_m1
+    instance_type: linux_x2
     max_build_duration: 60
     environment:
       flutter: stable
       java: 11
-      xcode: latest
-      cocoapods: default
     triggering:
       events:
         - push
