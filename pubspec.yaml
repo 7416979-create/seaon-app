@@ -27,7 +27,7 @@ dependencies:
   connectivity_plus: ^5.0.0
 
   # 백그라운드 작업 (GPS 추적)
-  workmanager: ^0.5.1
+  workmanager: ^0.7.0
 
   # 로컬 알림 (호환성 문제로 임시 제거)
   # flutter_local_notifications: ^16.0.0
@@ -90,11 +90,3 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/signatures/
-
-  # fonts 폴더 설정
-  fonts:
-    - family: Roboto
-      fonts:
-        - asset: assets/fonts/Roboto-Regular.ttf
-        - asset: assets/fonts/Roboto-Bold.ttf
-          weight: 700

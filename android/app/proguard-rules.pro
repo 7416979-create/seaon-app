@@ -40,3 +40,6 @@
 
 # Location services
 -keep class com.google.android.gms.location.** { *; }
+
+# Flutter deferred components reference Play Core, which is not bundled
+-dontwarn com.google.android.play.core.**

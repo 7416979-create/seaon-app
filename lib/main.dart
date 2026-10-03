@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 // import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // 호환성 문제로 임시 비활성화
-import 'package:workmanager/workmanager.dart';
+import 'package:workmanager/workmanager.dart' as wm;
+import 'package:workmanager/workmanager.dart' hide Constraints;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:intl/intl.dart';
@@ -73,6 +74,7 @@ class HRAttendanceApp extends StatelessWidget {
         ),
       ),
       home: const SplashScreen(),
+      onGenerateRoute: _buildRoute,
       debugShowCheckedModeBanner: false,
     );
   }
@@ -457,8 +459,8 @@ class LocationService {
       'gpsTracking',
       'gpsTracking',
       frequency: const Duration(minutes: 15),
-      constraints: Constraints(
-        networkType: NetworkType.any,
+      constraints: wm.Constraints(
+        networkType: NetworkType.not_required,
         requiresBatteryNotLow: false,
         requiresCharging: false,
         requiresDeviceIdle: false,
@@ -1629,8 +1631,4 @@ Route<dynamic> _buildRoute(RouteSettings settings) {
     default:
       return MaterialPageRoute(builder: (_) => const LoginScreen());
   }
-}
-
-extension on HRAttendanceApp {
-  void Function(RouteSettings)? get onGenerateRoute => _buildRoute;
 }

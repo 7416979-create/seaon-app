@@ -56,35 +56,6 @@
             </intent-filter>
         </activity>
 
-        <!-- ==================== 서비스 설정 ==================== -->
-
-        <!-- 백그라운드 GPS 추적 서비스 -->
-        <service
-            android:name="com.flutter_workmanager.BackgroundService"
-            android:enabled="true"
-            android:exported="false"
-            android:permission="android.permission.BIND_JOB_SERVICE" />
-
-        <!-- 위치 업데이트 서비스 -->
-        <service
-            android:name=".LocationUpdateService"
-            android:enabled="true"
-            android:exported="false" />
-
-        <!-- ==================== 리시버 설정 ==================== -->
-
-        <!-- 부팅 완료 리시버 -->
-        <receiver
-            android:name=".BootReceiver"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-            </intent-filter>
-        </receiver>
-
-        <!-- 알림 채널 설정 (API 26+) -->
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
