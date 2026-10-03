@@ -12,13 +12,10 @@
     environment:
       flutter: stable
       java: 11
-      gradle: 8.4.1
-    android:
-      gradle_wrapper_path: android/gradle/wrapper/gradle-wrapper.jar
     scripts:
       - name: Install dependencies
         script: flutter pub get
       - name: Build release APK
-        script: flutter build apk --release --no-tree-shake-icons
+        script: flutter build apk --release
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
