@@ -1,0 +1,3 @@
+*.jar binary
+android/gradle/wrapper/gradle-wrapper.jar binary
+gradlew binary eol=lf
