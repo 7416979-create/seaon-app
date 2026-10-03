@@ -1,5 +1,6 @@
 ﻿workflows:
-default-workflow:    name: SEAON HR - Android APK Build
+  default-workflow:
+    name: SEAON HR - Android APK Build
     instance_type: linux_x2
     max_build_duration: 60
     triggering:
@@ -11,6 +12,9 @@ default-workflow:    name: SEAON HR - Android APK Build
     environment:
       flutter: stable
       java: 11
+      gradle: 8.4.1
+    android:
+      gradle_wrapper_path: android/gradle/wrapper/gradle-wrapper.jar
     scripts:
       - name: Install dependencies
         script: flutter pub get
