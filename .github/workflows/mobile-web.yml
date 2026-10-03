@@ -1,0 +1,77 @@
+name: Mobile Web (build & deploy to GitHub Pages)
+
+on:
+  push:
+    branches:
+      - main
+      # Preview deploys from the initial web-app branch until it is merged.
+      - claude/project-thread-ciguvb
+    paths:
+      - 'mobile-web/**'
+      - '.github/workflows/mobile-web.yml'
+  pull_request:
+    paths:
+      - 'mobile-web/**'
+      - '.github/workflows/mobile-web.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-web-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-web
+    env:
+      VITE_BASE: /${{ github.event.repository.name }}/
+      # Optional repository variables (Settings > Secrets and variables > Actions > Variables).
+      VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+      VITE_VAPID_PUBLIC_KEY: ${{ vars.VITE_VAPID_PUBLIC_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile-web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      # GitHub Pages has no SPA rewrites: serve the app for unknown paths (deep links like /home).
+      - run: cp dist/index.html dist/404.html && touch dist/.nojekyll
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mobile-web-dist
+          path: mobile-web/dist
+          include-hidden-files: true
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: mobile-web-dist
+          path: site
+      - name: Publish to gh-pages branch
+        working-directory: site
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Deploy mobile web from ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+      - name: Summary
+        run: echo "Deployed to https://${GITHUB_REPOSITORY_OWNER}.github.io/${{ github.event.repository.name }}/" >> "$GITHUB_STEP_SUMMARY"
