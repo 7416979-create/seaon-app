@@ -1,0 +1,7 @@
+﻿flutter : [!] No Android SDK found. Try setting the ANDROID_SDK_ROOT environment variable.
+At line:13 char:1
++ flutter build apk --release 2>&1 | Tee-Object -FilePath "build_log.tx ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([!] No Android ...nment variable.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
