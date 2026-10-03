@@ -42,6 +42,7 @@ Future<void> _backgroundGpsTracking() async {
   print('백그라운드 GPS 추적: ${position.latitude}, ${position.longitude}');
 }
 
+/* 호환성 문제로 임시 비활성화
 Future<void> _initNotifications() async {
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('app_icon');
@@ -54,6 +55,7 @@ Future<void> _initNotifications() async {
 
   await FlutterLocalNotificationsPlugin().initialize(initializationSettings);
 }
+*/
 
 class HRAttendanceApp extends StatelessWidget {
   const HRAttendanceApp({Key? key}) : super(key: key);
@@ -856,11 +858,12 @@ class _AttendanceCheckScreenState extends State<AttendanceCheckScreen> {
         SnackBar(content: Text(_statusMessage!)),
       );
 
-      // 알림 표시
-      await _showNotification(_statusMessage!);
+      // 알림 표시 (임시 비활성화)
+      // await _showNotification(_statusMessage!);
     }
   }
 
+  /* 호환성 문제로 임시 비활성화
   Future<void> _showNotification(String message) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
@@ -881,6 +884,7 @@ class _AttendanceCheckScreenState extends State<AttendanceCheckScreen> {
       platformChannelSpecifics,
     );
   }
+  */
 
   @override
   Widget build(BuildContext context) {
