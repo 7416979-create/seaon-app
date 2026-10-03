@@ -1,6 +1,5 @@
 ﻿workflows:
-  seaon-apk-build:
-    name: SEAON HR - Android APK Build
+default-workflow:    name: SEAON HR - Android APK Build
     instance_type: linux_x2
     max_build_duration: 60
     triggering:
