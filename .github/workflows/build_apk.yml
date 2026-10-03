@@ -21,6 +21,15 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.0
+          body: |
+            ## 근태관리 앱 (SEAON HR) v1.0.0
+
+            📖 **사용 매뉴얼 (휴대폰에서 바로 보기):** https://github.com/7416979-create/seaon-app/blob/main/release/SEAON_HR_USER_MANUAL_KO.md
+
+            ### 어떤 파일을 받나요? (아래 Assets에서 하나만)
+            - **SEAON_HR_v1.0.0_arm64.apk** — 대부분의 휴대폰 (권장)
+            - **SEAON_HR_v1.0.0.apk** — 모든 휴대폰용 통합 파일 (모르면 이것)
+            - **SEAON_HR_v1.0.0_armv7.apk** — 오래된 32비트 휴대폰
           files: |
             release/SEAON_HR_v1.0.0.apk
             release/SEAON_HR_v1.0.0_arm64.apk
