@@ -19,3 +19,9 @@
         script: flutter build apk --release
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
+    publishing:
+      github_releases:
+        release: true
+        prerelease: false
+        artifacts:
+          - build/app/outputs/flutter-apk/app-release.apk
