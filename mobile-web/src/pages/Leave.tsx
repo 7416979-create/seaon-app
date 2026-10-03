@@ -140,6 +140,7 @@ export default function Leave() {
                     {r.time ? ` ${r.time}` : ''}
                   </span>
                   <div className="muted small" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.reason}</div>
+                  {r.decisionNote && <div className="small" style={{ color: 'var(--danger)' }}>관리자: {r.decisionNote}</div>}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span className={`chip ${STATUS_CHIP[r.status]}`}>{r.status}</span>

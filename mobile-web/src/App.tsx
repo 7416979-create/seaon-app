@@ -8,6 +8,21 @@ import Home from './pages/Home';
 import Records from './pages/Records';
 import Leave from './pages/Leave';
 import MyPage from './pages/MyPage';
+import AdminLayout from './admin/AdminLayout';
+import AdminLogin from './admin/AdminLogin';
+import Dashboard from './admin/Dashboard';
+import AdminRecords from './admin/AdminRecords';
+import AdminRequests from './admin/AdminRequests';
+import AdminEmployees from './admin/AdminEmployees';
+import AdminSettings from './admin/AdminSettings';
+
+function MobileShell() {
+  return (
+    <div className="app">
+      <Outlet />
+    </div>
+  );
+}
 
 function RequireAuth() {
   if (!api.currentUser()) return <Navigate to="/login" replace />;
@@ -23,8 +38,8 @@ export default function App() {
   return (
     <ToastProvider>
       <HashRouter>
-        <div className="app">
-          <Routes>
+        <Routes>
+          <Route element={<MobileShell />}>
             <Route path="/" element={<Splash />} />
             <Route path="/login" element={<Login />} />
             <Route element={<RequireAuth />}>
@@ -33,9 +48,17 @@ export default function App() {
               <Route path="/leave" element={<Leave />} />
               <Route path="/my" element={<MyPage />} />
             </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
+          </Route>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="records" element={<AdminRecords />} />
+            <Route path="requests" element={<AdminRequests />} />
+            <Route path="employees" element={<AdminEmployees />} />
+            <Route path="settings" element={<AdminSettings />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </HashRouter>
     </ToastProvider>
   );
