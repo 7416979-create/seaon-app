@@ -29,8 +29,8 @@ dependencies:
   # 백그라운드 작업 (GPS 추적)
   workmanager: ^0.5.1
 
-  # 로컬 알림
-  flutter_local_notifications: ^16.0.0
+  # 로컬 알림 (호환성 문제로 임시 제거)
+  # flutter_local_notifications: ^16.0.0
 
   # 보안 저장소 (암호화)
   flutter_secure_storage: ^9.0.0

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:network_info_plus/network_info_plus.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+// import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // 호환성 문제로 임시 비활성화
 import 'package:workmanager/workmanager.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
@@ -20,8 +20,8 @@ void main() async {
   // 작업 관리자 초기화
   await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
 
-  // 알림 초기화
-  await _initNotifications();
+  // 알림 초기화 (임시 비활성화)
+  // await _initNotifications();
 
   runApp(const HRAttendanceApp());
 }
