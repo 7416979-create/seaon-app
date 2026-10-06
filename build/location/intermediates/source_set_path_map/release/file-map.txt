@@ -1,0 +1,16 @@
+com.lyokone.location-jetified-play-services-base-18.1.0-0 C:\Users\A\.gradle\caches\transforms-3\0b90422b6523b6c6fc047c006c0b69f8\transformed\jetified-play-services-base-18.1.0\res
+com.lyokone.location-jetified-play-services-basement-18.1.0-1 C:\Users\A\.gradle\caches\transforms-3\145005088e54451b25a736f08800ac23\transformed\jetified-play-services-basement-18.1.0\res
+com.lyokone.location-jetified-window-1.0.0-beta04-2 C:\Users\A\.gradle\caches\transforms-3\15c70dbe6f8f3f687c525f374d705ad5\transformed\jetified-window-1.0.0-beta04\res
+com.lyokone.location-jetified-core-ktx-1.10.1-3 C:\Users\A\.gradle\caches\transforms-3\7d853b01a361a33eff1ba446a2effe1a\transformed\jetified-core-ktx-1.10.1\res
+com.lyokone.location-core-1.10.1-4 C:\Users\A\.gradle\caches\transforms-3\99b3adab2ebc5e50bd00021ff9c735e4\transformed\core-1.10.1\res
+com.lyokone.location-jetified-annotation-experimental-1.3.0-5 C:\Users\A\.gradle\caches\transforms-3\bf4484fd4dd1916943c1ebd102b05e15\transformed\jetified-annotation-experimental-1.3.0\res
+com.lyokone.location-lifecycle-runtime-2.3.1-6 C:\Users\A\.gradle\caches\transforms-3\bf7acd09fa27d458d3c052b6eed3468c\transformed\lifecycle-runtime-2.3.1\res
+com.lyokone.location-jetified-window-java-1.0.0-beta04-7 C:\Users\A\.gradle\caches\transforms-3\f11f710d867b753c136815d0c47c8468\transformed\jetified-window-java-1.0.0-beta04\res
+com.lyokone.location-main-8 C:\Users\A\AppData\Local\Pub\Cache\hosted\pub.dev\location-5.0.3\android\src\main\res
+com.lyokone.location-release-9 C:\Users\A\AppData\Local\Pub\Cache\hosted\pub.dev\location-5.0.3\android\src\release\res
+com.lyokone.location-pngs-10 C:\Users\A\Desktop\seah_on\01_Flutter_App\seaon_attendance\build\location\generated\res\pngs\release
+com.lyokone.location-resValues-11 C:\Users\A\Desktop\seah_on\01_Flutter_App\seaon_attendance\build\location\generated\res\resValues\release
+com.lyokone.location-rs-12 C:\Users\A\Desktop\seah_on\01_Flutter_App\seaon_attendance\build\location\generated\res\rs\release
+com.lyokone.location-mergeReleaseResources-13 C:\Users\A\Desktop\seah_on\01_Flutter_App\seaon_attendance\build\location\intermediates\incremental\release\mergeReleaseResources\merged.dir
+com.lyokone.location-mergeReleaseResources-14 C:\Users\A\Desktop\seah_on\01_Flutter_App\seaon_attendance\build\location\intermediates\incremental\release\mergeReleaseResources\stripped.dir
+com.lyokone.location-merged_res-15 C:\Users\A\Desktop\seah_on\01_Flutter_App\seaon_attendance\build\location\intermediates\merged_res\release

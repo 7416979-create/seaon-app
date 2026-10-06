@@ -1,0 +1,4 @@
+#Sat Oct 03 21:10:49 KST 2026
+base.0=C\:\\Users\\A\\Desktop\\seah_on\\01_Flutter_App\\seaon_attendance\\build\\app\\intermediates\\dex\\release\\minifyReleaseWithR8\\classes.dex
+path.0=classes.dex
+renamed.0=classes.dex

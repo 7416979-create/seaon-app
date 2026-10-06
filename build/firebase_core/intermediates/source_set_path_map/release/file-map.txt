@@ -1,0 +1,14 @@
+io.flutter.plugins.firebase.core.firebase_core-jetified-play-services-basement-18.1.0-0 C:\Users\A\.gradle\caches\transforms-3\145005088e54451b25a736f08800ac23\transformed\jetified-play-services-basement-18.1.0\res
+io.flutter.plugins.firebase.core.firebase_core-jetified-window-1.0.0-beta04-1 C:\Users\A\.gradle\caches\transforms-3\15c70dbe6f8f3f687c525f374d705ad5\transformed\jetified-window-1.0.0-beta04\res
+io.flutter.plugins.firebase.core.firebase_core-jetified-annotation-experimental-1.1.0-2 C:\Users\A\.gradle\caches\transforms-3\59065523a109bec874ee1ebc33db03e5\transformed\jetified-annotation-experimental-1.1.0\res
+io.flutter.plugins.firebase.core.firebase_core-core-1.6.0-3 C:\Users\A\.gradle\caches\transforms-3\a4aa96d7826822fa19a51930117fe873\transformed\core-1.6.0\res
+io.flutter.plugins.firebase.core.firebase_core-jetified-firebase-common-20.4.2-4 C:\Users\A\.gradle\caches\transforms-3\be41470c61a0fee65640e23cbeb1558d\transformed\jetified-firebase-common-20.4.2\res
+io.flutter.plugins.firebase.core.firebase_core-jetified-window-java-1.0.0-beta04-5 C:\Users\A\.gradle\caches\transforms-3\f11f710d867b753c136815d0c47c8468\transformed\jetified-window-java-1.0.0-beta04\res
+io.flutter.plugins.firebase.core.firebase_core-main-6 C:\Users\A\AppData\Local\Pub\Cache\hosted\pub.dev\firebase_core-2.27.0\android\src\main\res
+io.flutter.plugins.firebase.core.firebase_core-release-7 C:\Users\A\AppData\Local\Pub\Cache\hosted\pub.dev\firebase_core-2.27.0\android\src\release\res
+io.flutter.plugins.firebase.core.firebase_core-pngs-8 C:\Users\A\Desktop\seah_on\01_Flutter_App\seaon_attendance\build\firebase_core\generated\res\pngs\release
+io.flutter.plugins.firebase.core.firebase_core-resValues-9 C:\Users\A\Desktop\seah_on\01_Flutter_App\seaon_attendance\build\firebase_core\generated\res\resValues\release
+io.flutter.plugins.firebase.core.firebase_core-rs-10 C:\Users\A\Desktop\seah_on\01_Flutter_App\seaon_attendance\build\firebase_core\generated\res\rs\release
+io.flutter.plugins.firebase.core.firebase_core-mergeReleaseResources-11 C:\Users\A\Desktop\seah_on\01_Flutter_App\seaon_attendance\build\firebase_core\intermediates\incremental\release\mergeReleaseResources\merged.dir
+io.flutter.plugins.firebase.core.firebase_core-mergeReleaseResources-12 C:\Users\A\Desktop\seah_on\01_Flutter_App\seaon_attendance\build\firebase_core\intermediates\incremental\release\mergeReleaseResources\stripped.dir
+io.flutter.plugins.firebase.core.firebase_core-merged_res-13 C:\Users\A\Desktop\seah_on\01_Flutter_App\seaon_attendance\build\firebase_core\intermediates\merged_res\release

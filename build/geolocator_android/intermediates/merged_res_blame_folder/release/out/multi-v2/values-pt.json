@@ -1,0 +1,34 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.baseflow.geolocator.geolocator_android-mergeReleaseResources-17:/values-pt/values-pt.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\A\\.gradle\\caches\\transforms-3\\10d2f8a943489e30f3d4576779712250\\transformed\\core-1.13.0\\res\\values-pt\\values-pt.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,152,254,353,453,560,670,790",
+                        "endColumns": "96,101,98,99,106,109,119,100",
+                        "endOffsets": "147,249,348,448,555,665,785,886"
+                    }
+                }
+            ]
+        },
+        {
+            "outputFile": "com.baseflow.geolocator.geolocator_android-merged_res-19:/values-pt/values-pt.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\A\\.gradle\\caches\\transforms-3\\10d2f8a943489e30f3d4576779712250\\transformed\\core-1.13.0\\res\\values-pt\\values-pt.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,152,254,353,453,560,670,790",
+                        "endColumns": "96,101,98,99,106,109,119,100",
+                        "endOffsets": "147,249,348,448,555,665,785,886"
+                    }
+                }
+            ]
+        }
+    ]
+}
