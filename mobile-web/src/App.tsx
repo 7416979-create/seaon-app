@@ -4,6 +4,7 @@ import { TabBar } from './components/TabBar';
 import { ToastProvider } from './components/Toast';
 import Splash from './pages/Splash';
 import Login from './pages/Login';
+import EnterLink from './pages/EnterLink';
 import Home from './pages/Home';
 import Records from './pages/Records';
 import Leave from './pages/Leave';
@@ -42,6 +43,8 @@ export default function App() {
           <Route element={<MobileShell />}>
             <Route path="/" element={<Splash />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/e/:token" element={<EnterLink kind="employee" />} />
+            <Route path="/a/:token" element={<EnterLink kind="admin" />} />
             <Route element={<RequireAuth />}>
               <Route path="/home" element={<Home />} />
               <Route path="/records" element={<Records />} />

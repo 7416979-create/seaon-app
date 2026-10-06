@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { api } from '../data/demoApi';
-import type { AttendanceRecord, LeaveBalance, Workplace } from '../data/types';
+import { MAX_EDIT_METERS, type AttendanceRecord, type CheckLocation, type LeaveBalance, type Policy } from '../data/types';
 import { distanceM, getPosition, GeoError, locationPermission } from '../lib/geo';
 import { dateKey, formatDuration, hhmm, koreanDate, monthKey, startOfWeek, todayKey, workedMinutes } from '../lib/time';
 import { LocationSheet } from '../components/LocationSheet';
-import { useToast } from '../components/Toast';
+import { ResultPopup } from '../components/ResultPopup';
+import { InstallBanner } from '../components/InstallBanner';
+import { MyLocationCard } from '../components/MyLocationCard';
 
 type Action = 'in' | 'out';
+const LOC_EXPLAINED_KEY = 'seaon.locExplained';
 
 function useNow(intervalMs = 1000) {
   const [now, setNow] = useState(() => new Date());
@@ -18,21 +20,33 @@ function useNow(intervalMs = 1000) {
   return now;
 }
 
+const ICON_IN = 'M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3';
+const ICON_OUT = 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9';
+
+function PunchIcon({ d }: { d: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={d} />
+    </svg>
+  );
+}
+
 export default function Home() {
   const user = api.currentUser()!;
-  const toast = useToast();
   const now = useNow();
   const [record, setRecord] = useState<AttendanceRecord | null>(null);
-  const [workplace, setWorkplace] = useState<Workplace | null>(null);
+  const [policy, setPolicy] = useState<Policy | null>(null);
   const [summary, setSummary] = useState<{ weekMin: number; monthDays: number; leave: LeaveBalance } | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<Action | null>(null);
   const [sheet, setSheet] = useState<{ mode: 'explain' | 'denied'; action?: Action } | null>(null);
-  const [result, setResult] = useState<{ kind: 'ok' | 'danger' | 'warn'; text: string } | null>(null);
+  const [error, setError] = useState('');
+  const [popup, setPopup] = useState<{ kind: Action; record: AttendanceRecord } | null>(null);
+  const [manual, setManual] = useState<{ lat: number; lng: number } | null>(null);
 
   const load = useCallback(async () => {
-    const [rec, wp, monthRecs, leave] = await Promise.all([
+    const [rec, pol, monthRecs, leave] = await Promise.all([
       api.getRecord(todayKey()),
-      api.getWorkplace(),
+      api.getPolicy(),
       api.getRecords(monthKey(new Date())),
       api.leaveBalance(),
     ]);
@@ -41,7 +55,7 @@ export default function Home() {
     prevMonth.setDate(0);
     const weekRecs = [...monthRecs, ...(await api.getRecords(monthKey(prevMonth)))].filter((r) => r.date >= weekStart);
     setRecord(rec);
-    setWorkplace(wp);
+    setPolicy(pol);
     setSummary({
       weekMin: weekRecs.reduce((s, r) => s + workedMinutes(r.checkIn, r.checkOut), 0),
       monthDays: monthRecs.filter((r) => r.checkIn).length,
@@ -53,106 +67,113 @@ export default function Home() {
     load();
   }, [load]);
 
+  const needsLocation = !!policy && (policy.locationTracking || policy.geofence);
+  const canEdit = !!policy?.showEmployeeMap && !!policy.allowLocationEdit;
+
   async function start(action: Action) {
-    setResult(null);
-    if (!workplace) {
-      setResult({ kind: 'warn', text: '사업장 위치가 아직 설정되지 않았습니다. 마이페이지에서 먼저 설정해 주세요.' });
-      return;
-    }
+    setError('');
+    if (!needsLocation) return run(action);
     const perm = await locationPermission();
-    if (perm === 'denied') {
-      setSheet({ mode: 'denied' });
-      return;
+    if (perm === 'denied' && policy?.geofence) return setSheet({ mode: 'denied' });
+    let explained = false;
+    try {
+      explained = localStorage.getItem(LOC_EXPLAINED_KEY) === '1';
+    } catch {
+      // ignore
     }
-    if (perm !== 'granted') {
-      setSheet({ mode: 'explain', action });
-      return;
-    }
+    if (perm !== 'granted' && perm !== 'denied' && !explained) return setSheet({ mode: 'explain', action });
     run(action);
+  }
+
+  async function locate(): Promise<CheckLocation | null> {
+    if (!needsLocation || !policy) return null;
+    try {
+      const fix = await getPosition();
+      // A pin the employee moved is used only if editing is allowed and it stays near the real GPS fix.
+      const useManual = canEdit && manual && distanceM(fix.lat, fix.lng, manual.lat, manual.lng) <= MAX_EDIT_METERS;
+      if (canEdit && manual && !useManual) throw new Error(`수정한 위치가 실제 위치에서 ${MAX_EDIT_METERS}m 넘게 떨어져 있습니다. "원래대로"를 누르고 다시 시도하세요.`);
+      const spot = useManual ? manual : fix;
+      const wp = policy.workplace;
+      const distance = wp ? Math.round(distanceM(spot.lat, spot.lng, wp.lat, wp.lng)) : undefined;
+      if (policy.geofence && wp && distance !== undefined && distance > wp.radius) {
+        throw new Error('회사 근처에서만 출퇴근할 수 있습니다.');
+      }
+      return useManual
+        ? { lat: spot.lat, lng: spot.lng, accuracy: fix.accuracy, distance, edited: true, gps: { lat: fix.lat, lng: fix.lng } }
+        : { ...fix, distance };
+    } catch (e) {
+      // Without the geofence rule, a missing location never blocks check-in.
+      if (!policy.geofence && e instanceof GeoError) return null;
+      throw e;
+    }
   }
 
   async function run(action: Action) {
     setSheet(null);
-    if (!workplace) return;
-    setBusy(true);
     try {
-      const fix = await getPosition();
-      const distance = Math.round(distanceM(fix.lat, fix.lng, workplace.lat, workplace.lng));
-      if (distance > workplace.radius) {
-        setResult({
-          kind: 'danger',
-          text: `사업장 범위 밖입니다. 현재 ${workplace.name}에서 약 ${distance.toLocaleString()}m 떨어져 있습니다 (허용 ${workplace.radius}m).`,
-        });
-        return;
-      }
-      const loc = { ...fix, distance };
+      localStorage.setItem(LOC_EXPLAINED_KEY, '1');
+    } catch {
+      // ignore
+    }
+    setBusy(action);
+    try {
+      const loc = await locate();
       const rec = action === 'in' ? await api.checkIn(loc) : await api.checkOut(loc);
-      setRecord(rec);
-      const label = action === 'in' ? '출근' : '퇴근';
-      toast(`${label} 완료 · ${hhmm(action === 'in' ? rec.checkIn : rec.checkOut)}`);
-      setResult({ kind: 'ok', text: `${label}이 등록되었습니다. (사업장에서 ${distance}m, 정확도 ±${Math.round(fix.accuracy)}m)` });
+      setRecord({ ...rec });
+      setPopup({ kind: action, record: rec });
       load();
     } catch (e) {
       if (e instanceof GeoError && e.code === 'denied') setSheet({ mode: 'denied' });
-      else setResult({ kind: 'danger', text: (e as Error).message });
+      else setError((e as Error).message);
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
-  const status = !record?.checkIn ? 'before' : !record.checkOut ? 'working' : 'done';
+  const checkedIn = !!record?.checkIn;
+  const checkedOut = !!record?.checkOut;
   const worked = workedMinutes(record?.checkIn, record?.checkOut, now);
 
   return (
-    <div className="page">
+    <div className="page home">
+      <InstallBanner />
+
       <div>
-        <div className="muted small">{user.dept} · {user.position}</div>
+        <div className="muted small">{koreanDate(now)}</div>
         <div className="page-title">{user.name}님, 안녕하세요</div>
       </div>
 
-      <section className="card stack" aria-label="오늘 출퇴근">
-        <div className="row">
-          <span className="muted">{koreanDate(now)}</span>
-          <span className={`chip ${status === 'working' ? 'chip-ok' : status === 'done' ? 'chip-primary' : ''}`}>
-            {status === 'before' ? '출근 전' : status === 'working' ? '근무 중' : '퇴근 완료'}
-          </span>
-        </div>
-        <div className="clock">{hhmm(now.toISOString())}<span className="muted" style={{ fontSize: 22 }}>:{String(now.getSeconds()).padStart(2, '0')}</span></div>
+      <div className="punch-grid">
+        <button className="punch punch-in" onClick={() => start('in')} disabled={checkedIn || busy !== null} aria-label="출근하기">
+          <PunchIcon d={ICON_IN} />
+          <span className="punch-label">출근</span>
+          <span className="punch-sub">{busy === 'in' ? '확인 중…' : checkedIn ? hhmm(record?.checkIn) : '눌러서 출근'}</span>
+        </button>
+        <button className="punch punch-out" onClick={() => start('out')} disabled={!checkedIn || checkedOut || busy !== null} aria-label="퇴근하기">
+          <PunchIcon d={ICON_OUT} />
+          <span className="punch-label">퇴근</span>
+          <span className="punch-sub">{busy === 'out' ? '확인 중…' : checkedOut ? hhmm(record?.checkOut) : checkedIn ? '눌러서 퇴근' : '출근 후 가능'}</span>
+        </button>
+      </div>
 
-        <div className="stats" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+      {error && (
+        <div className="notice notice-danger" role="alert">
+          {error}
+        </div>
+      )}
+
+      <section className="card" aria-label="오늘 출퇴근 기록">
+        <h3>오늘 기록</h3>
+        <div className="stats">
           <div className="stat"><b>{hhmm(record?.checkIn)}</b><span>출근</span></div>
           <div className="stat"><b>{hhmm(record?.checkOut)}</b><span>퇴근</span></div>
-          <div className="stat"><b style={{ fontSize: 15 }}>{record?.checkIn ? formatDuration(worked) : '-'}</b><span>근무시간</span></div>
-        </div>
-
-        {status === 'before' && (
-          <button className="btn btn-primary btn-xl btn-block" onClick={() => start('in')} disabled={busy}>
-            {busy ? '위치 확인 중…' : '출근하기'}
-          </button>
-        )}
-        {status === 'working' && (
-          <button className="btn btn-primary btn-xl btn-block" onClick={() => start('out')} disabled={busy}>
-            {busy ? '위치 확인 중…' : '퇴근하기'}
-          </button>
-        )}
-        {status === 'done' && <div className="notice notice-ok">오늘 근무를 마쳤습니다. 수고하셨습니다.</div>}
-
-        {result && (
-          <div className={`notice notice-${result.kind}`} role="alert">
-            {result.text}
-            {!workplace && (
-              <>
-                {' '}
-                <Link to="/my">사업장 설정하기 →</Link>
-              </>
-            )}
-          </div>
-        )}
-
-        <div className="muted small">
-          {workplace ? `사업장: ${workplace.name} (반경 ${workplace.radius}m 안에서 등록 가능)` : '사업장 위치 미설정 · 마이페이지에서 설정하세요'}
+          <div className="stat"><b style={{ fontSize: 15 }}>{checkedIn ? formatDuration(worked) : '-'}</b><span>근무시간</span></div>
         </div>
       </section>
+
+      {policy?.showEmployeeMap && (
+        <MyLocationCard workplace={policy.workplace} allowEdit={canEdit} manual={canEdit ? manual : null} onManual={setManual} />
+      )}
 
       <section className="card" aria-label="근태 현황">
         <h3>근태 현황</h3>
@@ -163,13 +184,15 @@ export default function Home() {
         </div>
       </section>
 
+      <div className="now-clock" aria-label="현재 시각">
+        {hhmm(now.toISOString())}
+        <span>:{String(now.getSeconds()).padStart(2, '0')}</span>
+      </div>
+
       {sheet && (
-        <LocationSheet
-          mode={sheet.mode}
-          onClose={() => setSheet(null)}
-          onConfirm={() => sheet.action && run(sheet.action)}
-        />
+        <LocationSheet mode={sheet.mode} onClose={() => setSheet(null)} onConfirm={() => sheet.action && run(sheet.action)} />
       )}
+      {popup && <ResultPopup kind={popup.kind} record={popup.record} onClose={() => setPopup(null)} />}
     </div>
   );
 }

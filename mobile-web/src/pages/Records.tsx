@@ -49,7 +49,6 @@ export default function Records() {
                     <b>{Number(m)}/{Number(d)} ({weekdayOf(r.date)})</b>
                     <div className="muted small">
                       {hhmm(r.checkIn)} ~ {hhmm(r.checkOut)}
-                      {r.inLoc && ` · 사업장 ${r.inLoc.distance}m`}
                     </div>
                   </div>
                   {open ? (

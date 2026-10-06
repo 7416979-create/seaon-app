@@ -34,7 +34,7 @@ export default function AdminLogin() {
           <Logo size={44} />
           <div>
             <div style={{ fontWeight: 800, fontSize: 19 }}>근태관리 관리자</div>
-            <div className="muted small">관리자 계정으로 로그인하세요</div>
+            <div className="muted small">관리자 링크를 잃어버렸을 때만 사용하는 비상 로그인입니다</div>
           </div>
         </div>
         <div className="field">

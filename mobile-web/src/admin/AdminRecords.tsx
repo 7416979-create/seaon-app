@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { adminApi } from '../data/demoApi';
 import type { AttendanceRecord, Employee } from '../data/types';
 import { dateKey, formatDuration, hhmm, weekdayOf, workedMinutes } from '../lib/time';
+import { IN_COLOR, MapView, OUT_COLOR } from '../components/MapView';
+
+const fmtLoc = (l?: { lat: number; lng: number }) => (l ? `${l.lat.toFixed(6)} ${l.lng.toFixed(6)}` : '');
 
 type Row = AttendanceRecord & { empId: string };
 
@@ -17,6 +20,7 @@ export default function AdminRecords() {
   const [empId, setEmpId] = useState('');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [rows, setRows] = useState<Row[] | null>(null);
+  const [mapRow, setMapRow] = useState<Row | null>(null);
 
   useEffect(() => {
     adminApi.listEmployees().then(setEmployees);
@@ -43,10 +47,10 @@ export default function AdminRecords() {
   }, [rows]);
 
   function exportCsv() {
-    const header = ['날짜', '요일', '사원번호', '이름', '부서', '출근', '퇴근', '근무(분)', '출근 위치 거리(m)'];
+    const header = ['날짜', '요일', '사원번호', '이름', '부서', '출근', '퇴근', '근무(분)', '출근 위치(위도 경도)', '퇴근 위치(위도 경도)'];
     const lines = (rows ?? []).map((r) => {
       const e = byId.get(r.empId);
-      return [r.date, weekdayOf(r.date), e?.empNo ?? '', e?.name ?? r.empId, e?.dept ?? '', hhmm(r.checkIn), hhmm(r.checkOut), workedMinutes(r.checkIn, r.checkOut), r.inLoc?.distance ?? '']
+      return [r.date, weekdayOf(r.date), e?.empNo ?? '', e?.name ?? r.empId, e?.dept ?? '', hhmm(r.checkIn), hhmm(r.checkOut), workedMinutes(r.checkIn, r.checkOut), fmtLoc(r.inLoc), fmtLoc(r.outLoc)]
         .map(csvCell)
         .join(',');
     });
@@ -98,7 +102,7 @@ export default function AdminRecords() {
 
       <div className="table-wrap" style={{ maxHeight: 560 }}>
         <table className="tbl">
-          <thead><tr><th>날짜</th><th>이름</th><th>부서</th><th>출근</th><th>퇴근</th><th className="num">근무시간</th><th className="num">사업장 거리</th></tr></thead>
+          <thead><tr><th>날짜</th><th>이름</th><th>부서</th><th>출근</th><th>퇴근</th><th className="num">근무시간</th><th>위치</th></tr></thead>
           <tbody>
             {rows === null ? (
               <tr><td colSpan={7} className="muted">불러오는 중…</td></tr>
@@ -113,7 +117,16 @@ export default function AdminRecords() {
                     <td>{hhmm(r.checkIn)}</td>
                     <td>{r.checkOut ? hhmm(r.checkOut) : <span className="chip chip-warn">미기록</span>}</td>
                     <td className="num">{formatDuration(workedMinutes(r.checkIn, r.checkOut))}</td>
-                    <td className="num">{r.inLoc ? `${r.inLoc.distance}m` : '-'}</td>
+                    <td>
+                      {r.inLoc || r.outLoc ? (
+                        <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                          <button className="btn btn-sm btn-outline" onClick={() => setMapRow(r)}>지도</button>
+                          {(r.inLoc?.edited || r.outLoc?.edited) && <span className="chip chip-warn">직원 수정</span>}
+                        </span>
+                      ) : (
+                        <span className="muted small">없음</span>
+                      )}
+                    </td>
                   </tr>
                 );
               })
@@ -121,6 +134,33 @@ export default function AdminRecords() {
           </tbody>
         </table>
       </div>
+
+      {mapRow && (
+        <div className="modal-backdrop" onClick={() => setMapRow(null)}>
+          <div className="modal" style={{ maxWidth: 720 }} role="dialog" aria-modal="true" aria-labelledby="map-title" onClick={(e) => e.stopPropagation()}>
+            <h2 id="map-title">{byId.get(mapRow.empId)?.name ?? ''} · {mapRow.date} ({weekdayOf(mapRow.date)})</h2>
+            <div className="legend">
+              <span><i style={{ background: IN_COLOR }} />출근 {hhmm(mapRow.checkIn)}</span>
+              <span><i style={{ background: OUT_COLOR }} />퇴근 {hhmm(mapRow.checkOut)}</span>
+            </div>
+            <MapView
+              height={400}
+              points={[
+                ...(mapRow.inLoc ? [{ ...mapRow.inLoc, color: IN_COLOR, label: `출근 ${hhmm(mapRow.checkIn)}${mapRow.inLoc.edited ? ' · 직원 수정' : ''} (오차 ±${Math.round(mapRow.inLoc.accuracy)}m)` }] : []),
+                ...(mapRow.inLoc?.gps ? [{ ...mapRow.inLoc.gps, color: '#9aa4b8', label: '출근 시 실제 GPS 위치' }] : []),
+                ...(mapRow.outLoc ? [{ ...mapRow.outLoc, color: OUT_COLOR, label: `퇴근 ${hhmm(mapRow.checkOut)}${mapRow.outLoc.edited ? ' · 직원 수정' : ''} (오차 ±${Math.round(mapRow.outLoc.accuracy)}m)` }] : []),
+                ...(mapRow.outLoc?.gps ? [{ ...mapRow.outLoc.gps, color: '#9aa4b8', label: '퇴근 시 실제 GPS 위치' }] : []),
+              ]}
+            />
+            {(mapRow.inLoc?.edited || mapRow.outLoc?.edited) && (
+              <div className="notice notice-warn small">직원이 위치를 직접 수정한 기록입니다. 회색 점이 실제 GPS 위치입니다.</div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn btn-outline" onClick={() => setMapRow(null)}>닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

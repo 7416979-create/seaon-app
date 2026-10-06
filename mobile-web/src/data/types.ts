@@ -15,11 +15,25 @@ export interface Workplace {
   radius: number;
 }
 
+// Company-wide rules, set only by the admin.
+export interface Policy {
+  locationTracking: boolean; // record where each check-in/out happened
+  geofence: boolean; // only allow check-in/out inside the workplace radius
+  showEmployeeMap: boolean; // employees see their own current position on a map
+  allowLocationEdit: boolean; // employees may nudge their pin (within MAX_EDIT_METERS of the GPS fix)
+  workplace: Workplace | null;
+}
+
+export const MAX_EDIT_METERS = 300;
+
 export interface CheckLocation {
   lat: number;
   lng: number;
   accuracy: number;
-  distance: number;
+  distance?: number;
+  // Set when the employee moved the pin; keeps the original GPS fix for the admin.
+  edited?: boolean;
+  gps?: { lat: number; lng: number };
 }
 
 export interface AttendanceRecord {
@@ -57,14 +71,13 @@ export interface LeaveBalance {
 
 // Every screen talks to this interface; swap the demo implementation for a server-backed one later.
 export interface Api {
-  login(id: string, password: string): Promise<User>;
+  enterWithLink(token: string): Promise<User>;
   logout(): Promise<void>;
   currentUser(): User | null;
-  getWorkplace(): Promise<Workplace | null>;
-  setWorkplace(wp: Workplace): Promise<void>;
+  getPolicy(): Promise<Policy>;
   getRecord(date: string): Promise<AttendanceRecord | null>;
-  checkIn(loc: CheckLocation): Promise<AttendanceRecord>;
-  checkOut(loc: CheckLocation): Promise<AttendanceRecord>;
+  checkIn(loc: CheckLocation | null): Promise<AttendanceRecord>;
+  checkOut(loc: CheckLocation | null): Promise<AttendanceRecord>;
   getRecords(month: string): Promise<AttendanceRecord[]>;
   listRequests(): Promise<LeaveRequest[]>;
   createRequest(req: Pick<LeaveRequest, 'type' | 'date' | 'endDate' | 'time' | 'reason'>): Promise<LeaveRequest>;
@@ -75,9 +88,10 @@ export interface Api {
 export interface Employee extends User {
   active: boolean;
   annualLeave: number;
+  linkToken: string;
 }
 
-export type NewEmployee = Omit<Employee, 'id' | 'active'> & { password: string };
+export type NewEmployee = Omit<Employee, 'id' | 'active' | 'linkToken'>;
 
 export interface DayRow {
   employee: Employee;
@@ -91,18 +105,20 @@ export interface Admin {
 }
 
 export interface AdminApi {
+  enterWithLink(token: string): Promise<Admin>;
   login(id: string, password: string): Promise<Admin>;
   logout(): Promise<void>;
   currentAdmin(): Admin | null;
+  issueAdminLink(): Promise<string>;
   listEmployees(): Promise<Employee[]>;
   createEmployee(e: NewEmployee): Promise<Employee>;
-  updateEmployee(id: string, patch: Partial<Omit<Employee, 'id'>>): Promise<void>;
-  resetPassword(id: string, password: string): Promise<void>;
+  updateEmployee(id: string, patch: Partial<Omit<Employee, 'id' | 'linkToken'>>): Promise<void>;
+  regenerateLink(id: string): Promise<string>;
   dayStatus(date: string): Promise<DayRow[]>;
   records(from: string, to: string, empId?: string): Promise<Array<AttendanceRecord & { empId: string }>>;
   listRequests(status?: RequestStatus): Promise<LeaveRequest[]>;
   decideRequest(id: string, status: '승인' | '반려', note?: string): Promise<void>;
   leaveBalanceOf(empId: string): Promise<LeaveBalance>;
-  getWorkplace(): Promise<Workplace | null>;
-  setWorkplace(wp: Workplace): Promise<void>;
+  getPolicy(): Promise<Policy>;
+  setPolicy(p: Policy): Promise<void>;
 }

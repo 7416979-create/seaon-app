@@ -14,7 +14,7 @@ const MENU = [
   { to: '/admin/records', label: '근태 기록', d: 'M8 2v4M16 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z' },
   { to: '/admin/requests', label: '신청 승인', d: 'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9' },
   { to: '/admin/employees', label: '직원 관리', d: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' },
-  { to: '/admin/settings', label: '사업장 설정', d: 'M12 22s-8-6-8-12a8 8 0 1 1 16 0c0 6-8 12-8 12zM12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' },
+  { to: '/admin/settings', label: '설정 · 회사 위치', d: 'M12 22s-8-6-8-12a8 8 0 1 1 16 0c0 6-8 12-8 12zM12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' },
 ];
 
 export default function AdminLayout() {

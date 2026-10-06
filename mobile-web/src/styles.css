@@ -150,4 +150,44 @@ input[type='date'].input, input[type='time'].input { padding: 0 10px; -webkit-ap
 .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; background: var(--text-2); }
 .status-dot.on { background: var(--ok); }
 
-@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2s; } }
+/* Leaflet panes use z-index 400+; isolate them so popups and sheets stay on top. */
+.map-box { position: relative; z-index: 0; isolation: isolate; width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+
+/* Home: two large punch blocks */
+.punch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.punch {
+  min-height: 168px; border: 0; border-radius: 20px; padding: 18px 10px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  color: #fff; box-shadow: var(--shadow); transition: transform 0.08s ease, opacity 0.2s ease;
+}
+.punch:active:not(:disabled) { transform: scale(0.97); }
+.punch svg { width: 56px; height: 56px; }
+.punch-in { background: var(--primary); }
+.punch-out { background: #f2780c; }
+.punch-label { font-size: 24px; font-weight: 800; }
+.punch-sub { font-size: 14px; font-weight: 600; opacity: 0.92; font-variant-numeric: tabular-nums; }
+.punch:disabled { background: var(--surface-2); color: var(--text-2); box-shadow: none; cursor: default; }
+
+.home .now-clock { margin-top: auto; text-align: center; font-size: 34px; font-weight: 800; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; padding-top: 8px; }
+.home .now-clock span { font-size: 20px; color: var(--text-2); }
+
+/* Check-in / check-out result popup */
+.popup-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, 0.5); display: grid; place-items: center; padding: 24px; }
+.popup { width: 100%; max-width: 340px; background: var(--surface); border-radius: 22px; padding: 26px 20px 18px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; animation: pop 0.18s ease-out; }
+.popup h2 { margin: 4px 0 0; font-size: 24px; }
+.popup-sub { margin: 0 0 6px; color: var(--text-2); font-size: 16px; }
+.popup-icon { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; font-size: 38px; }
+.popup-icon.in { background: var(--primary-soft); }
+.popup-icon.out { background: var(--warn-soft); }
+.popup-time { width: 100%; display: flex; justify-content: space-between; background: var(--surface-2); border-radius: 12px; padding: 12px 14px; }
+.popup-time span { color: var(--text-2); }
+.popup-time b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.popup .btn { margin-top: 6px; }
+@keyframes pop { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* Install banner */
+.install-banner { display: flex; align-items: center; gap: 10px; background: var(--primary-soft); color: var(--text); border-radius: 14px; padding: 12px 10px 12px 14px; font-size: 15px; }
+.install-banner .small { color: var(--text-2); margin-top: 2px; }
+.install-close { border: 0; background: transparent; font-size: 22px; line-height: 1; color: var(--text-2); padding: 4px 6px; }
+
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2s; } .popup { animation: none; } }

@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminApi } from '../data/demoApi';
-import type { DayRow, LeaveRequest } from '../data/types';
+import type { DayRow, LeaveRequest, Policy } from '../data/types';
 import { formatDuration, hhmm, koreanDate, todayKey, workedMinutes } from '../lib/time';
+import { IN_COLOR, MapView, OUT_COLOR, type MapPoint } from '../components/MapView';
 
 const LATE_AFTER = { h: 9, m: 0 };
 
@@ -22,11 +23,13 @@ export function statusOf(row: DayRow): { label: string; cls: string } {
 export default function Dashboard() {
   const [rows, setRows] = useState<DayRow[] | null>(null);
   const [pending, setPending] = useState<LeaveRequest[]>([]);
+  const [policy, setPolicy] = useState<Policy | null>(null);
   const now = new Date();
 
   useEffect(() => {
     adminApi.dayStatus(todayKey()).then(setRows);
     adminApi.listRequests('대기').then(setPending);
+    adminApi.getPolicy().then(setPolicy);
   }, []);
 
   const total = rows?.length ?? 0;
@@ -34,6 +37,17 @@ export default function Dashboard() {
   const late = rows?.filter((r) => isLate(r.record?.checkIn)).length ?? 0;
   const onLeave = rows?.filter((r) => r.leave).length ?? 0;
   const absent = total - inCount - onLeave;
+
+  const points = useMemo<MapPoint[]>(() => {
+    const out: MapPoint[] = [];
+    for (const r of rows ?? []) {
+      if (r.record?.inLoc) out.push({ ...r.record.inLoc, color: IN_COLOR, label: `${r.employee.name} 출근 ${hhmm(r.record.checkIn)}` });
+      if (r.record?.outLoc) out.push({ ...r.record.outLoc, color: OUT_COLOR, label: `${r.employee.name} 퇴근 ${hhmm(r.record.checkOut)}` });
+    }
+    return out;
+  }, [rows]);
+  const wp = policy?.workplace;
+  const circle = useMemo(() => (wp ? { lat: wp.lat, lng: wp.lng, radius: wp.radius } : null), [wp]);
 
   return (
     <>
@@ -54,16 +68,21 @@ export default function Dashboard() {
         <div className="kpi"><span>승인 대기 신청</span><b>{pending.length}</b></div>
       </div>
 
+      {pending.length > 0 && (
+        <div className="notice notice-warn row">
+          <span>승인을 기다리는 신청이 <b>{pending.length}건</b> 있습니다.</span>
+          <Link to="/admin/requests">처리하러 가기 →</Link>
+        </div>
+      )}
+
       <div className="table-wrap">
         <table className="tbl">
           <thead>
-            <tr>
-              <th>이름</th><th>사원번호</th><th>부서</th><th>상태</th><th>출근</th><th>퇴근</th><th className="num">근무시간</th><th className="num">사업장 거리</th>
-            </tr>
+            <tr><th>이름</th><th>사원번호</th><th>부서</th><th>상태</th><th>출근</th><th>퇴근</th><th className="num">근무시간</th></tr>
           </thead>
           <tbody>
             {rows === null ? (
-              <tr><td colSpan={8} className="muted">불러오는 중…</td></tr>
+              <tr><td colSpan={7} className="muted">불러오는 중…</td></tr>
             ) : (
               rows.map((r) => {
                 const s = statusOf(r);
@@ -76,7 +95,6 @@ export default function Dashboard() {
                     <td>{hhmm(r.record?.checkIn)}</td>
                     <td>{hhmm(r.record?.checkOut)}</td>
                     <td className="num">{r.record?.checkIn ? formatDuration(workedMinutes(r.record.checkIn, r.record.checkOut)) : '-'}</td>
-                    <td className="num">{r.record?.inLoc ? `${r.record.inLoc.distance}m` : '-'}</td>
                   </tr>
                 );
               })
@@ -85,10 +103,17 @@ export default function Dashboard() {
         </table>
       </div>
 
-      {pending.length > 0 && (
-        <div className="notice notice-warn row">
-          <span>승인을 기다리는 신청이 <b>{pending.length}건</b> 있습니다.</span>
-          <Link to="/admin/requests">처리하러 가기 →</Link>
+      {policy?.locationTracking && (
+        <div className="card stack">
+          <div className="row">
+            <h3 style={{ margin: 0 }}>오늘 출퇴근 위치</h3>
+            <div className="legend"><span><i style={{ background: IN_COLOR }} />출근</span><span><i style={{ background: OUT_COLOR }} />퇴근</span>{wp && <span>○ 회사 범위</span>}</div>
+          </div>
+          {points.length === 0 ? (
+            <div className="muted small">오늘 기록된 위치가 없습니다.</div>
+          ) : (
+            <MapView points={points} circle={circle} height={380} />
+          )}
         </div>
       )}
     </>
