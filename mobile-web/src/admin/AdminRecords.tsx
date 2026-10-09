@@ -19,7 +19,8 @@ function csvCell(v: string | number) {
 function daysBetween(a: string, b: string): string[] {
   const out: string[] = [];
   const [y, m, d] = a.split('-').map(Number);
-  const end = new Date(...(b.split('-').map(Number) as [number, number, number]));
+  const [ey, em, ed] = b.split('-').map(Number);
+  const end = new Date(ey, em - 1, ed);
   for (let t = new Date(y, m - 1, d); t <= end; t.setDate(t.getDate() + 1)) out.push(dateKey(t));
   return out;
 }
@@ -74,24 +75,36 @@ export default function AdminRecords() {
 
   // Per employee: 근무일수, 출근일수, 지각, 휴가, 결근, 총 근무시간.
   // 결근 = 근무일수 - 출근일수 - 휴가 (0 미만이면 0). Holidays and future days are not counted.
+  // Every active employee gets a row, even with no records; days before the join date are not counted.
   const monthly = useMemo(() => {
     const working = workingDays(from, to > dateKey(today) ? dateKey(today) : to, holidays);
-    const m = new Map<string, { workDays: number; days: number; late: number; leave: number; absent: number; minutes: number }>();
+    const m = new Map<string, { working: Set<string>; workDays: number; days: number; late: number; leave: number; absent: number; minutes: number }>();
+    const entry = (id: string) => {
+      let s = m.get(id);
+      if (!s) {
+        const join = byId.get(id)?.joinDate ?? '';
+        const mine = new Set([...working].filter((d) => d >= join));
+        s = { working: mine, workDays: mine.size, days: 0, late: 0, leave: 0, absent: 0, minutes: 0 };
+        m.set(id, s);
+      }
+      return s;
+    };
+    for (const e of employees) if (e.active && (!empId || e.id === empId)) entry(e.id);
     for (const r of rows ?? []) {
-      const s = m.get(r.empId) ?? { workDays: working.size, days: 0, late: 0, leave: 0, absent: 0, minutes: 0 };
-      if (r.checkIn && working.has(r.date)) s.days += 1;
-      if (isLate(r.checkIn, workStart)) s.late += 1;
+      const s = entry(r.empId);
+      if (r.checkIn && s.working.has(r.date)) {
+        s.days += 1;
+        if (isLate(r.checkIn, workStart)) s.late += 1;
+      }
       s.minutes += workedMinutes(r.checkIn, r.checkOut);
-      m.set(r.empId, s);
     }
     for (const lr of approved) {
-      if (!m.has(lr.empId)) continue;
-      const s = m.get(lr.empId)!;
-      s.leave += leaveDaysOf(lr, working);
+      const s = m.get(lr.empId);
+      if (s) s.leave += leaveDaysOf(lr, s.working);
     }
     for (const s of m.values()) s.absent = Math.max(0, s.workDays - s.days - s.leave);
     return m;
-  }, [rows, approved, holidays, from, to, workStart]);
+  }, [rows, approved, holidays, from, to, workStart, employees, empId, byId]);
 
   function setPreset(kind: 'thisMonth' | 'lastMonth') {
     const base = kind === 'thisMonth' ? new Date(today.getFullYear(), today.getMonth(), 1) : new Date(today.getFullYear(), today.getMonth() - 1, 1);

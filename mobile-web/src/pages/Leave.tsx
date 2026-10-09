@@ -179,7 +179,7 @@ export default function Leave() {
 
       <form className="card stack" onSubmit={submitFix} aria-label="출퇴근 정정 신청" ref={fixCardRef}>
         <h3 style={{ margin: 0 }}>출퇴근 정정 신청</h3>
-        <div className="muted small">퇴근을 깜빡했거나 시각이 틀렸을 때 신청합니다. 어제부터 31일 이내의 날짜만 가능합니다.</div>
+        <div className="muted small">퇴근을 깜빡했거나 시각이 틀렸을 때 신청합니다. 오늘부터 지난 31일 이내의 날짜만 가능합니다.</div>
         <div className="field">
           <label htmlFor="fix-date">정정할 날짜</label>
           <input id="fix-date" className="input" type="date" value={fixDate} max={todayKey()} onChange={(e) => setFixDate(e.target.value)} />

@@ -67,7 +67,7 @@ export default function MyPage() {
             <div className="muted small">글자와 버튼을 크게 보여 줍니다. 이 휴대폰에만 저장됩니다.</div>
           </div>
           <label className="switch">
-            <input type="checkbox" checked={largeText} onChange={(e) => { setLargeText(e.target.checked); setLargeTextState(e.target.checked); }} />
+            <input type="checkbox" aria-label="큰 글씨로 보기" checked={largeText} onChange={(e) => { setLargeText(e.target.checked); setLargeTextState(e.target.checked); }} />
             <span />
           </label>
         </div>

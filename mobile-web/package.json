@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
+    "dev:demo": "node scripts/dev-demo.mjs",
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.sw.json && vite build",
     "preview": "vite preview --host",
     "icons": "node scripts/make-icons.mjs"
