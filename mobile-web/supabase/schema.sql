@@ -21,6 +21,7 @@ create table if not exists employees (
   active       boolean not null default true,
   annual_leave numeric(4,1) not null default 15,
   link_token   text not null unique,
+  link_used_at timestamptz,
   created_at   timestamptz not null default now()
 );
 
@@ -207,9 +208,11 @@ create or replace function emp_enter(p_link text) returns json
 language plpgsql security definer set search_path = public as $$
 declare e employees; t text := _token(32);
 begin
-  select * into e from employees where link_token = p_link;
+  select * into e from employees where link_token = p_link for update;
   if e.id is null then raise exception '링크가 올바르지 않거나 만료되었습니다. 관리자에게 새 링크를 요청하세요.'; end if;
   if not e.active then raise exception '사용이 중지된 계정입니다. 관리자에게 문의하세요.'; end if;
+  if e.link_used_at is not null then raise exception '이미 사용된 링크입니다. 관리자에게 새 링크를 요청하세요.'; end if;
+  update employees set link_used_at = now() where id = e.id;
   insert into emp_sessions (token, emp_id) values (t, e.id);
   return json_build_object('session', t, 'user', _user_json(e));
 end $$;
@@ -402,7 +405,7 @@ language plpgsql security definer set search_path = public as $$
 declare t text := _token(12);
 begin
   perform _admin(p_session);
-  update employees set link_token = t where id = p_id;
+  update employees set link_token = t, link_used_at = null where id = p_id;
   if not found then raise exception '직원을 찾을 수 없습니다.'; end if;
   delete from emp_sessions where emp_id = p_id;
   return t;
