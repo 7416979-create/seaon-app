@@ -5,7 +5,7 @@ import { todayKey } from '../lib/time';
 import { copyText, employeeLink } from '../lib/links';
 import { useToast } from '../components/Toast';
 
-const EMPTY: NewEmployee = { empNo: '', name: '', email: '', dept: '', position: '사원', joinDate: todayKey(), annualLeave: 15 };
+const EMPTY: NewEmployee = { empNo: '', name: '', email: '', dept: '', position: '사원', joinDate: todayKey(), annualLeave: 15, phone: '' };
 
 type BulkRow = { line: string; error: string; data: NewEmployee };
 
@@ -17,15 +17,16 @@ function parseBulk(text: string, existing: Set<string>): BulkRow[] {
     .filter((l) => l.trim() && !/^\s*사원번호/.test(l))
     .map((line) => {
       const cols = (line.includes('\t') ? line.split('\t') : line.split(',')).map((c) => c.trim());
-      const [empNo = '', name = '', dept = '', position = '', joinDate = '', leave = ''] = cols;
+      const [empNo = '', name = '', dept = '', position = '', joinDate = '', leave = '', phone = ''] = cols;
       const annual = leave === '' ? 15 : Number(leave);
       let error = '';
       if (!empNo || !name) error = '사원번호와 이름은 필수입니다.';
       else if (joinDate && !/^\d{4}-\d{2}-\d{2}$/.test(joinDate)) error = '입사일은 YYYY-MM-DD 형식이어야 합니다.';
       else if (existing.has(empNo) || seen.has(empNo)) error = '사원번호가 중복됩니다.';
       else if (!Number.isFinite(annual) || annual < 0 || annual > 30) error = '연차는 0~30 사이 숫자여야 합니다.';
+      else if (phone && !/^[0-9-]{9,13}$/.test(phone)) error = '휴대폰 번호 형식이 올바르지 않습니다.';
       seen.add(empNo);
-      return { line, error, data: { empNo, name, email: '', dept, position: position || '사원', joinDate: joinDate || todayKey(), annualLeave: annual } };
+      return { line, error, data: { empNo, name, email: '', dept, position: position || '사원', joinDate: joinDate || todayKey(), annualLeave: annual, phone } };
     });
 }
 
@@ -84,7 +85,7 @@ export default function AdminEmployees() {
   }
 
   async function newLink(e: Employee) {
-    if (!window.confirm(`${e.name}님의 링크를 새로 만들까요?\n기존 링크는 더 이상 쓸 수 없게 됩니다. (휴대폰 분실·교체 시 사용)`)) return;
+    if (!window.confirm(`${e.name}님의 링크를 새로 만들까요?\n기존 링크와 기존 기기 로그인은 모두 끊기고, 새 링크는 처음 연 기기 한 대에서만 쓸 수 있습니다. (휴대폰 교체·분실 시 사용)`)) return;
     const token = await adminApi.regenerateLink(e.id);
     await copyText(employeeLink(token));
     toast(`새 링크를 만들고 복사했습니다. ${e.name}님께 다시 보내 주세요.`);
@@ -150,18 +151,18 @@ export default function AdminEmployees() {
 
       <div className="table-wrap">
         <table className="tbl">
-          <thead><tr><th>사원번호</th><th>이름</th><th>부서</th><th>직급</th><th>입사일</th><th className="num">연차</th><th>상태</th><th>개인 링크</th><th>관리</th></tr></thead>
+          <thead><tr><th>사원번호</th><th>이름</th><th>휴대폰</th><th>부서</th><th>직급</th><th>입사일</th><th className="num">연차</th><th>상태</th><th>개인 링크</th><th>관리</th></tr></thead>
           <tbody>
             {list === null ? (
-              <tr><td colSpan={9} className="muted">불러오는 중…</td></tr>
+              <tr><td colSpan={10} className="muted">불러오는 중…</td></tr>
             ) : (
               shown.map((e) => (
                 <tr key={e.id} style={{ opacity: e.active ? 1 : 0.55 }}>
-                  <td>{e.empNo}</td><td><b>{e.name}</b></td><td>{e.dept}</td><td>{e.position}</td><td>{e.joinDate}</td>
+                  <td>{e.empNo}</td><td><b>{e.name}</b></td><td>{e.phone || '-'}</td><td>{e.dept}</td><td>{e.position}</td><td>{e.joinDate}</td>
                   <td className="num">{e.annualLeave}일</td>
                   <td><span className={`chip ${e.active ? 'chip-ok' : ''}`}>{e.active ? '재직' : '퇴사'}</span></td>
                   <td>
-                    <div className="link-cell">
+                    <div className="link-cell"><span className={`chip ${e.linkUsedAt ? 'chip-ok' : ''}`} title={e.linkUsedAt ? `등록: ${new Date(e.linkUsedAt).toLocaleString('ko-KR')}` : undefined}>{e.linkUsedAt ? '기기 등록됨' : '미사용'}</span>
                       <button className="btn btn-sm btn-primary" onClick={() => copyLink(e)} disabled={!e.active}>링크 복사</button>
                       <button className="btn btn-sm btn-outline" onClick={() => newLink(e)}>새 링크</button>
                     </div>
@@ -184,6 +185,7 @@ export default function AdminEmployees() {
               {field('부서', 'dept')}
               {field('직급', 'position')}
               {field('이메일 (선택)', 'email', 'email')}
+              {field('휴대폰 (선택)', 'phone', 'tel')}
               {field('입사일', 'joinDate', 'date')}
               {field('연차 일수', 'annualLeave', 'number')}
             </div>
@@ -200,7 +202,7 @@ export default function AdminEmployees() {
         <div className="modal-backdrop" onClick={() => !bulkBusy && setBulkOpen(false)}>
           <div className="modal" style={{ maxWidth: 720 }} role="dialog" aria-modal="true" aria-labelledby="bk-title" onClick={(e) => e.stopPropagation()}>
             <h2 id="bk-title">여러 명 등록</h2>
-            <div className="muted small">엑셀에서 아래 순서대로 복사해 붙여 넣으세요: 사원번호, 이름, 부서, 직급, 입사일(YYYY-MM-DD), 연차일수. 부서 이후는 비워도 됩니다. 첫 줄이 '사원번호'로 시작하는 머리글은 자동으로 건너뜁니다.</div>
+            <div className="muted small">엑셀에서 아래 순서대로 복사해 붙여 넣으세요: 사원번호, 이름, 부서, 직급, 입사일(YYYY-MM-DD), 연차일수, 휴대폰(선택). 부서 이후는 비워도 됩니다. 첫 줄이 '사원번호'로 시작하는 머리글은 자동으로 건너뜁니다.</div>
             <textarea className="input" rows={7} aria-label="직원 명단" placeholder={'T001\t홍길동\t영업팀\t사원\t2026-10-01\t15'} value={bulkText} onChange={(e) => { setBulkText(e.target.value); setBulkResults(null); }} disabled={bulkBusy} />
 
             {!bulkResults && bulkRows.length > 0 && (
@@ -262,9 +264,9 @@ export default function AdminEmployees() {
           <form className="modal" role="dialog" aria-modal="true" aria-labelledby="ef-title" onClick={(e) => e.stopPropagation()} onSubmit={saveEdit}>
             <h2 id="ef-title">{editing.name}님 정보 수정</h2>
             <div className="grid-2">
-              {(['name', 'dept', 'position', 'email'] as const).map((k) => (
+              {(['name', 'dept', 'position', 'email', 'phone'] as const).map((k) => (
                 <div className="field" key={k}>
-                  <label htmlFor={`ef-${k}`}>{{ name: '이름', dept: '부서', position: '직급', email: '이메일' }[k]}</label>
+                  <label htmlFor={`ef-${k}`}>{{ name: '이름', dept: '부서', position: '직급', email: '이메일', phone: '휴대폰' }[k]}</label>
                   <input id={`ef-${k}`} className="input" value={editing[k]} onChange={(e) => setEditing({ ...editing, [k]: e.target.value })} />
                 </div>
               ))}

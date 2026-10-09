@@ -32,7 +32,7 @@ const ADMIN = { id: 'admin', name: '관리자', password: 'admin1234' };
 
 // Fixed demo tokens so the same test links work on any device.
 export const DEMO_ADMIN_TOKEN = 'a7s2e9o4n1';
-const SAMPLE: Array<Omit<Employee, 'active' | 'annualLeave'>> = [
+const SAMPLE: Array<Omit<Employee, 'active' | 'annualLeave' | 'phone' | 'linkUsedAt'>> = [
   { id: 'u1001', empNo: '1001', name: '홍길동', email: 'demo@seaon.co.kr', dept: '경영지원팀', position: '사원', joinDate: '2025-03-02', linkToken: 'q7k2m9a1' },
   { id: 'u1002', empNo: '1002', name: '김민지', email: 'minji@seaon.co.kr', dept: '영업팀', position: '대리', joinDate: '2023-07-10', linkToken: 'v3n8c5d2' },
   { id: 'u1003', empNo: '1003', name: '이준호', email: 'junho@seaon.co.kr', dept: '생산팀', position: '과장', joinDate: '2021-01-04', linkToken: 'x9p4t6b3' },
@@ -60,7 +60,7 @@ export function newToken(len = 10): string {
 }
 
 function seed(): Db {
-  const employees: Employee[] = SAMPLE.map((e) => ({ ...e, active: true, annualLeave: 15 }));
+  const employees: Employee[] = SAMPLE.map((e) => ({ ...e, phone: '', active: true, annualLeave: 15, linkUsedAt: null }));
   const records: Db['records'] = {};
   const today = new Date();
   const first = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -320,7 +320,7 @@ export const adminApi: AdminApi = {
     requireAdmin();
     const db = load();
     if (db.employees.some((x) => x.empNo === e.empNo)) throw new Error('이미 사용 중인 사원번호입니다.');
-    const created: Employee = { ...e, id: `u${e.empNo}-${Date.now().toString(36)}`, active: true, linkToken: newToken() };
+    const created: Employee = { ...e, id: `u${e.empNo}-${Date.now().toString(36)}`, active: true, linkToken: newToken(), linkUsedAt: null };
     db.employees.push(created);
     save(db);
     return created;

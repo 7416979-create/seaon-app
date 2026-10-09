@@ -90,9 +90,11 @@ export interface Employee extends User {
   active: boolean;
   annualLeave: number;
   linkToken: string;
+  phone: string;
+  linkUsedAt?: string | null; // first time the link was opened; null = not yet
 }
 
-export type NewEmployee = Omit<Employee, 'id' | 'active' | 'linkToken'>;
+export type NewEmployee = Omit<Employee, 'id' | 'active' | 'linkToken' | 'linkUsedAt'>;
 
 export interface DayRow {
   employee: Employee;

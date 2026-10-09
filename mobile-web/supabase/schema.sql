@@ -22,6 +22,7 @@ create table if not exists employees (
   annual_leave numeric(4,1) not null default 15,
   link_token   text not null unique,
   link_used_at timestamptz,
+  phone        text not null default '',
   created_at   timestamptz not null default now()
 );
 
@@ -138,68 +139,22 @@ $$;
 
 create or replace function _employee_json(e employees) returns json
 language sql stable as $$
-  select (_user_json(e)::jsonb || jsonb_build_object('active', e.active, 'annualLeave', e.annual_leave, 'linkToken', e.link_token))::json
+  select (_user_json(e)::jsonb || jsonb_build_object('active', e.active, 'annualLeave', e.annual_leave,
+    'linkToken', e.link_token, 'linkUsedAt', e.link_used_at, 'phone', e.phone))::json
 $$;
 
-create or replace function _record_json(a attendance) returns json
-language sql stable as $$
-  select json_strip_nulls(json_build_object('date', to_char(a.work_date, 'YYYY-MM-DD'),
-    'checkIn', a.check_in, 'checkOut', a.check_out, 'inLoc', a.in_loc, 'outLoc', a.out_loc))
-$$;
-
-create or replace function _request_json(r leave_requests, emp_name text) returns json
-language sql stable as $$
-  select json_strip_nulls(json_build_object('id', r.id, 'empId', r.emp_id, 'empName', emp_name, 'type', r.type,
-    'date', to_char(r.start_date, 'YYYY-MM-DD'), 'endDate', to_char(r.end_date, 'YYYY-MM-DD'), 'time', r.at_time,
-    'reason', r.reason, 'status', r.status, 'createdAt', r.created_at, 'decidedAt', r.decided_at,
-    'decisionNote', r.decision_note))
-$$;
-
-create or replace function _leave_days(r leave_requests) returns numeric
-language sql immutable as $$
-  select case
-    when r.type = '연차' then greatest(1, coalesce(r.end_date, r.start_date) - r.start_date + 1)
-    when r.type in ('오전반차','오후반차') then 0.5
-    else 0 end
-$$;
-
-create or replace function _balance(p_emp uuid) returns json
-language sql stable security definer set search_path = public as $$
-  select json_build_object(
-    'total', (select annual_leave from employees where id = p_emp),
-    'used', coalesce(sum(_leave_days(r)) filter (where r.status = '승인'), 0),
-    'pending', coalesce(sum(_leave_days(r)) filter (where r.status = '대기'), 0))
-  from leave_requests r where r.emp_id = p_emp
-$$;
-
-create or replace function _distance_m(lat1 float8, lng1 float8, lat2 float8, lng2 float8) returns float8
-language sql immutable as $$
-  select 2 * 6371000 * asin(sqrt(power(sin(radians(lat2 - lat1) / 2), 2)
-    + cos(radians(lat1)) * cos(radians(lat2)) * power(sin(radians(lng2 - lng1) / 2), 2)))
-$$;
-
--- Server-side copy of the app's location rules, so a modified client can't skip them.
--- Returns the location to store, or null when location tracking is off.
-create or replace function _check_loc(p_loc jsonb) returns jsonb
-language plpgsql stable security definer set search_path = public as $$
-declare
-  pol jsonb := (select policy from settings where id = 1);
-  wp jsonb := pol -> 'workplace';
+create or replace function admin_create_employee(p_session text, p jsonb) returns json
+language plpgsql security definer set search_path = public as $$
+declare e employees;
 begin
-  if p_loc is not null and coalesce((p_loc ->> 'edited')::boolean, false) then
-    if p_loc -> 'gps' is null or _distance_m((p_loc #>> '{gps,lat}')::float8, (p_loc #>> '{gps,lng}')::float8,
-         (p_loc ->> 'lat')::float8, (p_loc ->> 'lng')::float8) > 300 then
-      raise exception '수정한 위치가 실제 위치에서 300m 넘게 떨어져 있습니다.';
-    end if;
-  end if;
-  if coalesce((pol ->> 'geofence')::boolean, false) and jsonb_typeof(wp) = 'object' then
-    if p_loc is null then raise exception '회사 근처에서만 출퇴근할 수 있습니다. 위치 권한을 허용해 주세요.'; end if;
-    if _distance_m((p_loc ->> 'lat')::float8, (p_loc ->> 'lng')::float8, (wp ->> 'lat')::float8, (wp ->> 'lng')::float8)
-       > (wp ->> 'radius')::float8 then
-      raise exception '회사 근처에서만 출퇴근할 수 있습니다.';
-    end if;
-  end if;
-  return case when coalesce((pol ->> 'locationTracking')::boolean, false) then p_loc else null end;
+  perform _admin(p_session);
+  if exists (select 1 from employees where emp_no = trim(p ->> 'empNo')) then raise exception '이미 사용 중인 사원번호입니다.'; end if;
+  insert into employees (emp_no, name, email, dept, position, join_date, annual_leave, phone, link_token)
+  values (trim(p ->> 'empNo'), trim(p ->> 'name'), coalesce(p ->> 'email', ''), coalesce(p ->> 'dept', ''),
+          coalesce(p ->> 'position', ''), nullif(p ->> 'joinDate', '')::date,
+          coalesce((p ->> 'annualLeave')::numeric, 15), left(coalesce(trim(p ->> 'phone'), ''), 20), _token(12))
+  returning * into e;
+  return _employee_json(e);
 end $$;
 
 -- ── Employee API ───────────────────────────────────────────────────────
@@ -392,7 +347,8 @@ begin
     position     = coalesce(p ->> 'position', position),
     join_date    = case when p ? 'joinDate' then nullif(p ->> 'joinDate', '')::date else join_date end,
     active       = coalesce((p ->> 'active')::boolean, active),
-    annual_leave = coalesce((p ->> 'annualLeave')::numeric, annual_leave)
+    annual_leave = coalesce((p ->> 'annualLeave')::numeric, annual_leave),
+    phone        = case when p ? 'phone' then left(coalesce(trim(p ->> 'phone'), ''), 20) else phone end
   where id = p_id;
   if not found then raise exception '직원을 찾을 수 없습니다.'; end if;
   -- A deactivated employee is signed out everywhere.
