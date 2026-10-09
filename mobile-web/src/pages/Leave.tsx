@@ -158,7 +158,7 @@ export default function Leave() {
         <div style={{ display: 'grid', gridTemplateColumns: isRange || needsTime ? '1fr 1fr' : '1fr', gap: 10 }}>
           <div className="field">
             <label htmlFor="req-date">{isRange ? '시작일' : '날짜'}</label>
-            <input id="req-date" className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <input id="req-date" className="input" type="date" value={date} onChange={(e) => { setDate(e.target.value); setEndDate(e.target.value); }} />
           </div>
           {isRange && (
             <div className="field">

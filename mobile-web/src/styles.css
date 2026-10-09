@@ -235,7 +235,7 @@ input[type='date'].input, input[type='time'].input { padding: 0 10px; -webkit-ap
   font-size: 16px;
 }
 .large-text .page .clock,
-.large-text .page .home .now-clock {
+.large-text .page.home .now-clock {
   font-size: 44px;
 }
 .large-text .page .punch-label {
