@@ -42,3 +42,8 @@ LESSONS_FOR_HAIKU 규칙 확인함.
 - 휴대폰에서 큰 글씨를 켜고 홈·근태기록·신청 화면을 한 번씩 봐 주세요.
 - 근태기록의 월별 요약 숫자가 맞는지 확인해 주세요.
 - 법률 확인 항목은 CHECKLIST_FOR_OWNER_JOB_MATCHING.md 참고.
+
+## 최종 기록 (M9)
+- 커밋: `416447ff` (main, push 완료). 배포: gh-pages `c42e6526`, 번들 `index-B5RuvvnS.js`.
+- 실사이트 확인: 번들에 "지도를 불러오는 중", "오늘부터 지난 31일", "큰 글씨로 보기" 문자열 있음. b7sh 문자열 0건.
+- 우편함: REPORT_HAIKU_M.md 복사. NAS 사본과 INDEX.txt 갱신.
