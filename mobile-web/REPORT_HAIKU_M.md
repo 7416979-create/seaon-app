@@ -47,3 +47,13 @@ LESSONS_FOR_HAIKU 규칙 확인함.
 - 커밋: `416447ff` (main, push 완료). 배포: gh-pages `c42e6526`, 번들 `index-B5RuvvnS.js`.
 - 실사이트 확인: 번들에 "지도를 불러오는 중", "오늘부터 지난 31일", "큰 글씨로 보기" 문자열 있음. b7sh 문자열 0건.
 - 우편함: REPORT_HAIKU_M.md 복사. NAS 사본과 INDEX.txt 갱신.
+
+## 스크린샷 (claude-work/m-screens, git에 올리지 않음)
+- M1: m1-{375,320}-{normal,large}-{home,records,leave,my}.png 16장 + m1-scroll-check.json (가로 넘침 없음 16/16)
+- M2: m2-focus-visible-home.png (Tab 키 3번 후 포커스 외곽선)
+- M3: m3-a-today-record-shown.png (기록 있는 날), m3-b-no-record-day.png (기록 없는 날), m3-c-empty-times-error.png (빈 시각 제출 안내)
+- M5: m5-a-summary-no-holiday.png, m5-b-summary-with-holiday.png (공휴일 추가 후 근무일수 감소). 테스트 공휴일은 삭제함
+- M6: m6-a-records-map.png (근태기록 지도), m6-b-settings-map.png (설정 회사 위치 지도), m6-c-my-location-map.png (내 위치 지도, 위치 권한 가짜 좌표 사용)
+
+## 미확인 (남은 것)
+- M3(d): 근태기록의 '정정' 버튼 진입. 데모 직원에게 오늘 아닌 과거 기록이 없어서 화면 버튼이 나타나지 않음. 실기기 또는 과거 기록이 있는 데이터에서 확인 필요.
