@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { adminApi } from '../data/demoApi';
+import { adminApi } from '../data';
 import type { Employee, NewEmployee } from '../data/types';
 import { todayKey } from '../lib/time';
 import { copyText, employeeLink } from '../lib/links';

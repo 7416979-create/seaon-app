@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api } from '../data/demoApi';
+import { api } from '../data';
 import { MAX_EDIT_METERS, type AttendanceRecord, type CheckLocation, type LeaveBalance, type Policy } from '../data/types';
 import { distanceM, getPosition, GeoError, locationPermission } from '../lib/geo';
 import { dateKey, formatDuration, hhmm, koreanDate, monthKey, startOfWeek, todayKey, workedMinutes } from '../lib/time';

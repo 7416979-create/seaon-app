@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { api, adminApi } from '../data/demoApi';
+import { api, adminApi } from '../data';
 import { Logo } from '../components/Logo';
 
 export default function EnterLink({ kind }: { kind: 'employee' | 'admin' }) {

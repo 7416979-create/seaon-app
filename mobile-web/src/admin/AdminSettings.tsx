@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { adminApi } from '../data/demoApi';
+import { adminApi } from '../data';
 import { MAX_EDIT_METERS, type Policy, type Workplace } from '../data/types';
 import { getPosition } from '../lib/geo';
 import { adminLink, copyText } from '../lib/links';
@@ -20,13 +20,35 @@ export default function AdminSettings() {
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [searching, setSearching] = useState(false);
   const [newAdminLink, setNewAdminLink] = useState('');
+  const [pwStatus, setPwStatus] = useState<{ set: boolean; id: string } | null>(null);
+  const [loginId, setLoginId] = useState('admin');
+  const [pw1, setPw1] = useState('');
+  const [pw2, setPw2] = useState('');
 
   useEffect(() => {
     adminApi.getPolicy().then((p) => {
       setPolicy(p);
       if (p.workplace) setWp(p.workplace);
     });
+    adminApi.passwordStatus().then((s) => {
+      setPwStatus(s);
+      setLoginId(s.id);
+    });
   }, []);
+
+  async function savePassword(e: FormEvent) {
+    e.preventDefault();
+    if (pw1 !== pw2) return toast('비밀번호 두 칸이 서로 다릅니다.');
+    try {
+      await adminApi.setPassword(loginId.trim(), pw1);
+      setPwStatus({ set: true, id: loginId.trim().toLowerCase() });
+      setPw1('');
+      setPw2('');
+      toast('비상 로그인 비밀번호를 저장했습니다.');
+    } catch (err) {
+      toast((err as Error).message);
+    }
+  }
 
   const hasSpot = !!wp.lat && !!wp.lng;
   const circle = useMemo(() => (hasSpot ? { lat: wp.lat, lng: wp.lng, radius: wp.radius } : null), [hasSpot, wp.lat, wp.lng, wp.radius]);
@@ -190,6 +212,30 @@ export default function AdminSettings() {
           <div className="notice notice-info small" style={{ wordBreak: 'break-all' }}>{newAdminLink}</div>
         )}
       </div>
+
+      <form className="card stack" style={{ maxWidth: 820 }} onSubmit={savePassword}>
+        <div className="row">
+          <h3 style={{ margin: 0 }}>비상 로그인</h3>
+          {pwStatus && <span className={`chip ${pwStatus.set ? 'chip-ok' : 'chip-warn'}`}>{pwStatus.set ? '설정됨' : '미설정'}</span>}
+        </div>
+        <div className="muted small">관리자 링크를 모두 잃어버렸을 때 <b>/admin/login</b> 화면에서 쓰는 아이디와 비밀번호입니다. 비밀번호는 8자 이상으로 정해 주세요.</div>
+        <div className="grid-2">
+          <div className="field">
+            <label htmlFor="adm-id">아이디</label>
+            <input id="adm-id" className="input" autoComplete="username" value={loginId} onChange={(e) => setLoginId(e.target.value)} />
+          </div>
+          <div />
+          <div className="field">
+            <label htmlFor="adm-pw1">새 비밀번호</label>
+            <input id="adm-pw1" className="input" type="password" autoComplete="new-password" value={pw1} onChange={(e) => setPw1(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="adm-pw2">새 비밀번호 확인</label>
+            <input id="adm-pw2" className="input" type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
+          </div>
+        </div>
+        <div><button className="btn btn-outline" disabled={pw1.length < 8}>비밀번호 저장</button></div>
+      </form>
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { adminApi, IS_DEMO } from '../data/demoApi';
+import { adminApi, IS_DEMO } from '../data';
 import { Logo } from '../components/Logo';
 import './admin.css';
 

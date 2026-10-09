@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { adminApi, IS_DEMO } from '../data/demoApi';
+import { adminApi, IS_DEMO } from '../data';
 import { Logo } from '../components/Logo';
 import './admin.css';
 
@@ -51,6 +51,9 @@ export default function AdminLogin() {
           <div className="notice notice-info small">
             <b>테스트 버전</b> · 관리자 데모 계정: <b>admin</b> / <b>admin1234</b>
           </div>
+        )}
+        {!IS_DEMO && (
+          <div className="notice notice-info small">관리자 화면 → 설정 → <b>비상 로그인</b>에서 비밀번호를 먼저 정해야 쓸 수 있습니다.</div>
         )}
         <a className="small muted" href="#/login" style={{ textAlign: 'center' }}>직원용 화면으로 이동</a>
       </form>

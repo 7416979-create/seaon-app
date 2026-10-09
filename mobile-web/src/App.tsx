@@ -1,5 +1,5 @@
 import { HashRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
-import { api } from './data/demoApi';
+import { api } from './data';
 import { TabBar } from './components/TabBar';
 import { ToastProvider } from './components/Toast';
 import Splash from './pages/Splash';

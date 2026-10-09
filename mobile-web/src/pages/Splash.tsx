@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, adminApi } from '../data/demoApi';
+import { api, adminApi } from '../data';
 import { Logo } from '../components/Logo';
 
 export default function Splash() {

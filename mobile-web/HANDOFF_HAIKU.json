@@ -1,0 +1,214 @@
+{
+  "document": "업무 인수인계서",
+  "project": "세아온 근태관리 – 서버(Supabase) 연결",
+  "from": { "role": "개발 팀장", "name": "Claude Opus 5.5" },
+  "to": { "role": "개발 팀원", "name": "Claude Haiku" },
+  "date": "2026-10-09",
+  "approver": "사용자 (대표)",
+
+  "0_work_rules": [
+    "이 문서를 끝까지 읽고 시작한다. 작업은 4_tasks의 순서대로 한다.",
+    "각 작업의 done_when을 모두 확인해야 '완료'로 보고한다. 확인하지 못한 것은 '미확인'이라고 쓴다. 축하 문구를 쓰지 않는다.",
+    "보고는 한국어로, 6_report_format의 표로 한다.",
+    "막히면 추측해서 고치지 않는다. 에러 원문을 붙여 사용자에게 보고하고 지시를 기다린다.",
+    "schema.sql(데이터베이스 구조)은 팀장 승인 없이 고치지 않는다. 고쳐야 할 것 같으면 이유를 보고한다.",
+    "git commit / push / 배포는 사용자에게 묻고 명확한 허락을 받은 뒤에만 한다."
+  ],
+
+  "1_project_overview": {
+    "what": "직원은 휴대폰으로 모바일웹(출퇴근·휴가 신청)을 쓰고, 관리자만 PC 관리자 페이지(/admin)를 쓴다. 지금까지는 각 브라우저에만 저장되는 데모였고, 이번에 Supabase 서버에 연결했다.",
+    "screens": {
+      "mobile_employee": "홈(출퇴근), 기록, 휴가, 마이페이지 – 개인 링크 /?go=/e/<token> 로 접속",
+      "pc_admin": "대시보드, 근태 기록, 신청 승인, 직원 관리, 설정 – 관리자 링크 /?go=/a/<token> 로 접속 (1회용), 비상 로그인 /#/admin/login"
+    },
+    "how_it_works": "앱은 Supabase의 Postgres 함수(RPC)만 부른다. 테이블은 공개 키로 직접 읽을 수 없게 막혀 있고(검증 완료: HTTP 401), 각 함수가 세션 토큰을 확인한다. .env에 서버 주소와 키가 있으면 서버 모드, 없으면 데모 모드로 빌드된다."
+  },
+
+  "2_locations": {
+    "work_dir": "C:\\Users\\A\\dev\\seaon-app\\mobile-web",
+    "git_root": "C:\\Users\\A\\dev\\seaon-app",
+    "nas_copy": "Z:\\home\\seaon_work\\desktop_seah_on\\01_Flutter_App\\seaon_attendance\\mobile-web",
+    "github": "https://github.com/7416979-create/seaon-app (main = 소스, gh-pages = 배포본)",
+    "live_site": "https://7416979-create.github.io/seaon-app/",
+    "supabase_dashboard": "https://supabase.com/dashboard/project/gecuvqtchrnoqdssvjlc",
+    "supabase_sql_editor": "https://supabase.com/dashboard/project/gecuvqtchrnoqdssvjlc/sql/new",
+    "supabase_url": "https://gecuvqtchrnoqdssvjlc.supabase.co",
+    "note": "작업과 빌드는 work_dir에서 한다(NAS는 느림). 작업이 끝날 때마다 5_commands.sync_to_nas로 NAS에 복사한다."
+  },
+
+  "3_handover_status": {
+    "done_verified": [
+      { "item": "Supabase 조직 'seaon'(Free), 프로젝트 'seaon-attendance'(서울 리전) 생성", "evidence": "대시보드 상태 Healthy" },
+      { "item": "work_dir\\.env 작성 (URL + legacy anon 공개 키)", "evidence": "git status에 안 보임(.gitignore 처리)" },
+      { "item": "schema.sql 실행 (테이블 8개, 함수 27개 + 내부 함수)", "evidence": "에러 없이 실행, 첫 관리자 링크 생성" },
+      { "item": "API 검증 30개 항목 통과", "evidence": "테이블 직접 읽기 401 차단, 내부 함수 호출 차단, 출퇴근 중복 방지, 휴가 신청·승인·잔여일수, 재처리 방지, 위치 제한(반경 밖·위치 없음·300m 초과 수정 거부, 반경 안 허용), 링크 재발급 시 기존 기기 로그아웃, 사용 중지 시 접속 차단, 비밀번호 미설정 시 비상 로그인 거부, 8자 미만 비밀번호 거부, 로그아웃 후 세션 무효" },
+      { "item": "테스트 데이터 삭제", "evidence": "직원 0, 기록 0, 신청 0, 세션 0, 관리자 링크는 실제용 1개(미사용)만 남음" },
+      { "item": "앱 코드: supabaseApi.ts, data/index.ts, 화면 15개 import 교체, 설정에 '비상 로그인' 카드", "evidence": "tsc 통과, vite build 통과" }
+    ],
+    "not_done": [
+      "T5 브라우저 화면 테스트 (서버 모드)",
+      "T6 README 수정",
+      "T7 커밋",
+      "T8 실제 사이트 배포",
+      "T9 NAS 동기화 + 최종 보고"
+    ],
+    "uncommitted_changes": "work_dir의 변경 사항은 아직 커밋하지 않았다.",
+    "real_admin_link": {
+      "status": "생성됨, 미사용. 사용자에게 이미 전달함.",
+      "rule": "이 링크는 1회용이다. 절대 테스트에 쓰지 않는다. 사용자가 관리자 PC에서 배포 후 직접 연다."
+    }
+  },
+
+  "4_tasks": [
+    {
+      "id": "T5",
+      "title": "브라우저 화면 테스트 (서버 모드, 로컬)",
+      "steps": [
+        "개발 서버 실행: 5_commands.dev_server",
+        "테스트용 관리자 링크 만들기: 5_commands.make_test_admin_link (사용자 크롬의 Supabase SQL 편집기 사용)",
+        "내장 브라우저(Claude Browser)로 http://localhost:5173/seaon-app/?go=/a/<테스트토큰> 접속",
+        "PC 관리자: 대시보드 → 직원 관리에서 직원 1명 추가(사원번호 T100, 이름 '화면테스트') → '링크 복사' → 근태 기록 → 신청 승인 → 설정(위치 기록 토글 1회, 회사 위치는 지도 클릭 후 저장) 화면이 에러 없이 뜨는지",
+        "설정의 '비상 로그인' 비밀번호는 입력하지 않는다(사용자가 직접 정함). 화면에 '미설정'으로 보이는지만 확인",
+        "모바일 직원: 복사한 직원 링크의 주소를 http://localhost:5173/seaon-app/?go=/e/<토큰> 으로 바꿔 접속 → resize_window preset 'mobile' → 홈에서 출근 → 퇴근 → 기록 탭 → 휴가 탭에서 연차 신청 → 마이페이지",
+        "PC 관리자로 돌아가 신청 승인 화면에서 방금 신청을 승인 → 대시보드에 출퇴근이 보이는지",
+        "로그인 화면(/#/login)에 '테스트용 바로가기'가 없는지, 관리자 메뉴에 '테스트 버전' 칩이 없는지",
+        "read_console_messages onlyErrors=true 로 콘솔 에러 확인",
+        "끝나면 5_commands.cleanup_test_data 실행, resize_window preset 'desktop'"
+      ],
+      "done_when": ["위 화면 전부 서버 데이터로 동작", "콘솔 에러 0", "테스트 데이터 삭제 확인(직원 0)"]
+    },
+    {
+      "id": "T6",
+      "title": "README 수정",
+      "file": "work_dir\\README.md",
+      "steps": [
+        "'현재 상태 (테스트 버전)' 절을 '서버 연결'로 바꾼다: .env 두 값(.env.example 참고), .env가 없으면 데모 모드, schema.sql을 SQL 편집기에서 실행, 첫 관리자 링크, 비상 로그인은 설정에서 지정",
+        "'구조' 절에 추가: src/data/supabaseApi.ts(서버 구현), src/data/index.ts(모드 선택), supabase/schema.sql(DB), supabase/api-helpers.ps1(API 테스트용)",
+        "키 값은 README에 쓰지 않는다"
+      ],
+      "done_when": ["README 내용이 실제 동작과 일치"]
+    },
+    {
+      "id": "T7",
+      "title": "커밋 (사용자 허락 후)",
+      "steps": [
+        "사용자에게 묻기: '변경 사항을 저장(커밋)할까요?'",
+        "허락 시 5_commands.commit 실행",
+        "git show --stat HEAD 에 .env가 없는지 확인"
+      ],
+      "done_when": ["커밋 완료, .env 미포함"]
+    },
+    {
+      "id": "T8",
+      "title": "실제 사이트 배포 (사용자 허락 후)",
+      "steps": [
+        "사용자에게 묻기: '실제 사이트에 배포할까요? 배포하면 데모 데이터 대신 서버 데이터가 보이고, 기존 데모 링크는 더 이상 작동하지 않습니다.'",
+        "허락 시 5_commands.build_server_mode → 5_commands.verify_build → 5_commands.deploy_gh_pages",
+        "2분 뒤 내장 브라우저로 https://7416979-create.github.io/seaon-app/#/login 열기. '테스트용 바로가기'가 없으면 성공. 옛 화면이면 새로고침 2번(PWA 캐시)"
+      ],
+      "done_when": ["실제 사이트가 서버 모드인 것을 브라우저로 확인"]
+    },
+    {
+      "id": "T9",
+      "title": "NAS 동기화 + 최종 보고",
+      "steps": [
+        "5_commands.sync_to_nas",
+        "Z:\\home\\seaon_work\\INDEX.txt 맨 아래에 추가: '[2026-10] 모바일웹 서버(Supabase) 연결 – 작업 폴더 C:\\Users\\A\\dev\\seaon-app, NAS 사본 desktop_seah_on\\01_Flutter_App\\seaon_attendance\\mobile-web, 인수인계서 HANDOFF_HAIKU.json'",
+        "6_report_format으로 최종 보고. 사용자에게 다음 할 일 안내: 관리자 PC에서 실제 관리자 링크 열기 → 설정 → 비상 로그인 비밀번호 정하기 → 직원 등록 후 링크를 카톡으로 보내기"
+      ],
+      "done_when": ["robocopy 종료 코드 < 8", "INDEX.txt 갱신"]
+    }
+  ],
+
+  "5_commands": {
+    "dev_server": {
+      "tool": "mcp__Claude_Browser__preview_start",
+      "prepare": "C:\\Users\\A\\Desktop\\준호\\.claude\\launch.json 이 없으면 아래 내용으로 만든다",
+      "launch_json": { "version": "0.0.1", "configurations": [ { "name": "seaon-web", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev", "--prefix", "C:/Users/A/dev/seaon-app/mobile-web"], "port": 5173 } ] },
+      "call": { "name": "seaon-web" },
+      "url": "http://localhost:5173/seaon-app/"
+    },
+    "make_test_admin_link": {
+      "tool": "mcp__claude-in-chrome__* (사용자 크롬, 이미 Supabase 로그인됨)",
+      "steps": [
+        "navigate → 2_locations.supabase_sql_editor",
+        "javascript_tool로 크롬 자동번역 끄기 (번역이 켜져 있으면 결과 표시 중 대시보드가 죽는다): document.documentElement.setAttribute('translate','no'); document.documentElement.classList.add('notranslate');",
+        "javascript_tool로 SQL 넣기 (키보드 ctrl+a/ctrl+v는 글자가 섞여 들어갈 수 있어 쓰지 않는다): monaco.editor.getModels()[0].setValue(\"insert into admin_links (token) values ('test-' || substr(md5(random()::text), 1, 10)) returning token;\")",
+        "find '실행/Run 버튼' 또는 화면 우상단 초록 'Run' 버튼 클릭",
+        "'Potential issue detected' 창이 뜨면 find 'Run query confirm button' → 클릭",
+        "get_page_text로 결과의 token 값 읽기"
+      ]
+    },
+    "api_test": {
+      "tool": "PowerShell",
+      "how": ". C:\\Users\\A\\dev\\seaon-app\\mobile-web\\supabase\\api-helpers.ps1; Show '라벨' (Rpc <함수명> @{인자=값})",
+      "example": ". C:\\Users\\A\\dev\\seaon-app\\mobile-web\\supabase\\api-helpers.ps1; Show 'bad link' (Rpc emp_enter @{p_link='nope'})",
+      "warning": "PowerShell 변수 이름은 대소문자를 구분하지 않는다. 테스트 변수 이름을 $sburl, $sbkey, $sbh로 짓지 않는다."
+    },
+    "cleanup_test_data": {
+      "tool": "make_test_admin_link와 같은 방법(SQL 편집기 + monaco setValue)",
+      "sql": "delete from employees where emp_no like 'T%'; delete from admin_links where token like 'test-%'; delete from admin_sessions; update settings set policy = '{\"locationTracking\":true,\"geofence\":false,\"showEmployeeMap\":true,\"allowLocationEdit\":true,\"workplace\":null}' where id = 1; select (select count(*) from employees) as employees, (select string_agg(token || ':' || used, ', ') from admin_links) as links;",
+      "expect": "employees 0, links에 test- 없이 실제 링크 1개(:false)",
+      "warning": "delete from admin_sessions는 사용자가 실제 관리자 링크를 쓰기 전(배포 전)에만 실행한다. 사용자가 이미 관리자로 접속했다면 이 줄을 빼고 'delete from admin_sessions where token in (테스트 세션)'처럼 범위를 좁히거나 사용자에게 묻는다."
+    },
+    "typecheck_build_demo": "Set-Location C:\\Users\\A\\dev\\seaon-app\\mobile-web; npx tsc -p tsconfig.json; npx tsc -p tsconfig.sw.json",
+    "build_server_mode": "Set-Location C:\\Users\\A\\dev\\seaon-app\\mobile-web; npm run build",
+    "verify_build": "Select-String -Path C:\\Users\\A\\dev\\seaon-app\\mobile-web\\dist\\assets\\*.js -Pattern 'gecuvqtchrnoqdssvjlc' -List | Select-Object -ExpandProperty Filename   # 1개 이상 나와야 서버 모드",
+    "commit": [
+      "git -C C:\\Users\\A\\dev\\seaon-app checkout -b supabase-backend",
+      "git -C C:\\Users\\A\\dev\\seaon-app add mobile-web",
+      "git -C C:\\Users\\A\\dev\\seaon-app status --short   # .env가 목록에 있으면 중단",
+      "git -C C:\\Users\\A\\dev\\seaon-app commit -m '<메시지>'   # 메시지: 'Connect mobile web to Supabase backend' + 빈 줄 + 변경 요약 + 시스템이 지정한 Co-Authored-By 줄",
+      "push는 T8에서 사용자 허락 후: git -C C:\\Users\\A\\dev\\seaon-app push -u origin supabase-backend (main 병합은 사용자에게 다시 묻는다)"
+    ],
+    "deploy_gh_pages": [
+      "git -C C:\\Users\\A\\dev\\seaon-app fetch origin gh-pages",
+      "git -C C:\\Users\\A\\dev\\seaon-app worktree add C:\\Users\\A\\dev\\seaon-pages gh-pages",
+      "Get-ChildItem C:\\Users\\A\\dev\\seaon-pages -Force | Where-Object Name -ne '.git' | Remove-Item -Recurse -Force",
+      "Copy-Item C:\\Users\\A\\dev\\seaon-app\\mobile-web\\dist\\* C:\\Users\\A\\dev\\seaon-pages -Recurse",
+      "git -C C:\\Users\\A\\dev\\seaon-pages add -A",
+      "git -C C:\\Users\\A\\dev\\seaon-pages commit -m 'Deploy: connect to Supabase backend'",
+      "git -C C:\\Users\\A\\dev\\seaon-pages push origin gh-pages",
+      "git -C C:\\Users\\A\\dev\\seaon-app worktree remove C:\\Users\\A\\dev\\seaon-pages",
+      "주의: 기존 gh-pages에 .nojekyll 이나 404.html 같은 파일이 있었다면 지우기 전에 목록을 확인하고 유지한다 (Get-ChildItem C:\\Users\\A\\dev\\seaon-pages -Force 로 먼저 확인)"
+    ],
+    "sync_to_nas": {
+      "command": "robocopy \"C:\\Users\\A\\dev\\seaon-app\\mobile-web\" \"Z:\\home\\seaon_work\\desktop_seah_on\\01_Flutter_App\\seaon_attendance\\mobile-web\" /E /XD node_modules dist dev-dist /XF .env /R:2 /W:2 /NFL /NDL /NP",
+      "success": "종료 코드 0~7 성공, 8 이상 실패"
+    }
+  },
+
+  "6_report_format": {
+    "rule": "상태는 ✅ 완료(직접 확인) / 🔄 진행 중 / ⏳ 예정 / ⚠️ 막힘",
+    "template": "| # | 작업 | 상태 | 확인 내용 / 비고 |\n|---|---|---|---|\n| T5 | 화면 테스트 | ✅ 완료 | 관리자 5개 화면, 직원 4개 화면, 콘솔 에러 0 |\n| T6 | README | 🔄 진행 중 | |"
+  },
+
+  "7_prohibited": [
+    "Supabase/GitHub 로그인, 비밀번호 입력, 계정 설정 변경",
+    "service_role / secret 키를 보거나, 받거나, 파일에 쓰기",
+    ".env를 git에 올리기, 키 값을 채팅에 출력하기",
+    "실제 관리자 링크(2g9y로 시작)를 테스트에 쓰기",
+    "사용자 허락 없이 commit / push / 배포",
+    "schema.sql 임의 수정, 실제 직원 데이터 삭제",
+    "C 드라이브에 큰 파일 새로 만들기"
+  ],
+
+  "8_known_issues": [
+    "Supabase 대시보드는 크롬 자동번역이 켜져 있으면 쿼리 결과를 표시하다 오류 화면이 뜬다. 매번 5_commands.make_test_admin_link의 번역 끄기 단계를 먼저 한다. 오류 화면이 뜨면 새로고침 후 다시 한다(쿼리는 실행되지 않았을 수 있으니 결과로 확인).",
+    "SQL 편집기에서 ctrl+a 후 ctrl+v를 쓰면 맨 앞에 'a'가 들어간 적이 있다. SQL은 monaco setValue로 넣는다.",
+    "관리자는 여러 명이어도 모두 '관리자' 한 명으로 표시된다(구분 기능 없음, 다음 단계 과제)."
+  ],
+
+  "9_escalate_to_lead": [
+    "SQL/DB 구조 변경이 필요해 보일 때",
+    "API 응답이 이 문서의 기대값과 다를 때",
+    "보안 관련으로 의심스러운 것(테이블이 공개 키로 읽힘 등)이 보일 때 → 즉시 중단 후 보고"
+  ],
+
+  "10_next_phase_backlog": [
+    "푸시 알림 (VAPID 키 + Supabase Edge Function)",
+    "관리자 여러 명 구분, 관리자별 기록",
+    "월별 근태 엑셀 내보내기",
+    "Flutter 안드로이드 앱(01_Flutter_App)도 같은 서버 사용"
+  ]
+}

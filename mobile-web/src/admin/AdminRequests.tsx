@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { adminApi } from '../data/demoApi';
+import { adminApi } from '../data';
 import type { LeaveBalance, LeaveRequest, RequestStatus } from '../data/types';
 import { useToast } from '../components/Toast';
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { api } from '../data/demoApi';
+import { api } from '../data';
 import { REQUEST_TYPES, type LeaveBalance, type LeaveRequest, type RequestType } from '../data/types';
 import { todayKey } from '../lib/time';
 import { useToast } from '../components/Toast';
@@ -121,7 +121,7 @@ export default function Leave() {
         <button className="btn btn-primary btn-block" type="submit" disabled={busy}>
           {busy ? '접수 중…' : '신청하기'}
         </button>
-        <div className="muted small">신청 후 관리자 승인이 필요합니다. (관리자 기능은 서버 연동 후 제공됩니다)</div>
+        <div className="muted small">신청 후 관리자 승인이 필요합니다.</div>
       </form>
 
       <section className="card" aria-label="신청 내역">

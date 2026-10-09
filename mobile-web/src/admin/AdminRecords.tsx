@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { adminApi } from '../data/demoApi';
+import { adminApi } from '../data';
 import type { AttendanceRecord, Employee } from '../data/types';
 import { dateKey, formatDuration, hhmm, weekdayOf, workedMinutes } from '../lib/time';
 import { IN_COLOR, MapView, OUT_COLOR } from '../components/MapView';

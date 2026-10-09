@@ -109,6 +109,9 @@ export interface AdminApi {
   login(id: string, password: string): Promise<Admin>;
   logout(): Promise<void>;
   currentAdmin(): Admin | null;
+  // Emergency id/password login, for when every admin link is lost.
+  passwordStatus(): Promise<{ set: boolean; id: string }>;
+  setPassword(id: string, password: string): Promise<void>;
   issueAdminLink(): Promise<string>;
   listEmployees(): Promise<Employee[]>;
   createEmployee(e: NewEmployee): Promise<Employee>;

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { adminApi } from '../data/demoApi';
+import { adminApi } from '../data';
 import type { DayRow, LeaveRequest, Policy } from '../data/types';
 import { formatDuration, hhmm, koreanDate, todayKey, workedMinutes } from '../lib/time';
 import { IN_COLOR, MapView, OUT_COLOR, type MapPoint } from '../components/MapView';

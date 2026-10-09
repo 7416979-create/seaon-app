@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, IS_DEMO } from '../data/demoApi';
+import { api, IS_DEMO } from '../data';
 import { browserKind } from '../lib/geo';
 import { canOneTapInstall, oneTapInstall, onInstallChange } from '../lib/install';
 import { enableNotifications, isStandalone, pushSupport, showTestNotification } from '../lib/push';

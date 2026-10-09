@@ -294,6 +294,14 @@ export const adminApi: AdminApi = {
     return readSession<Admin>(ADMIN_SESSION_KEY);
   },
 
+  async passwordStatus() {
+    return { set: true, id: ADMIN.id };
+  },
+
+  async setPassword() {
+    throw new Error('테스트 버전에서는 비밀번호를 바꿀 수 없습니다.');
+  },
+
   async issueAdminLink() {
     requireAdmin();
     const db = load();
@@ -396,6 +404,4 @@ export const adminApi: AdminApi = {
   },
 };
 
-export const api: Api = demoApi;
-export const IS_DEMO = true;
 export const DEMO_EMPLOYEE_TOKEN = SAMPLE[0].linkToken;

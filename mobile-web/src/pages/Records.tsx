@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../data/demoApi';
+import { api } from '../data';
 import type { AttendanceRecord } from '../data/types';
 import { formatDuration, hhmm, monthKey, todayKey, weekdayOf, workedMinutes } from '../lib/time';
 

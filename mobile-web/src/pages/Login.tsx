@@ -1,5 +1,5 @@
 import { Link, Navigate } from 'react-router-dom';
-import { api, IS_DEMO, DEMO_EMPLOYEE_TOKEN, DEMO_ADMIN_TOKEN } from '../data/demoApi';
+import { api, IS_DEMO, DEMO_EMPLOYEE_TOKEN, DEMO_ADMIN_TOKEN } from '../data';
 import { Logo } from '../components/Logo';
 
 // No passwords: people are identified by the personal link the admin sends them.
