@@ -133,7 +133,7 @@
       "steps": [
         "navigate → 2_locations.supabase_sql_editor",
         "javascript_tool로 크롬 자동번역 끄기 (번역이 켜져 있으면 결과 표시 중 대시보드가 죽는다): document.documentElement.setAttribute('translate','no'); document.documentElement.classList.add('notranslate');",
-        "javascript_tool로 SQL 넣기 (키보드 ctrl+a/ctrl+v는 글자가 섞여 들어갈 수 있어 쓰지 않는다): monaco.editor.getModels()[0].setValue(\"insert into admin_links (token) values ('test-' || substr(md5(random()::text), 1, 10)) returning token;\")",
+        "javascript_tool로 SQL 넣기 (키보드 ctrl+a/ctrl+v는 글자가 섞여 들어갈 수 있어 쓰지 않는다): monaco.editor.getModels()[0].setValue(\"insert into admin_links (token) values ('tst' || substr(md5(random()::text), 1, 9)) returning token;\")",
         "find '실행/Run 버튼' 또는 화면 우상단 초록 'Run' 버튼 클릭",
         "'Potential issue detected' 창이 뜨면 find 'Run query confirm button' → 클릭",
         "get_page_text로 결과의 token 값 읽기"
@@ -147,7 +147,7 @@
     },
     "cleanup_test_data": {
       "tool": "make_test_admin_link와 같은 방법(SQL 편집기 + monaco setValue)",
-      "sql": "delete from employees where emp_no like 'T%'; delete from admin_links where token like 'test-%'; delete from admin_sessions; update settings set policy = '{\"locationTracking\":true,\"geofence\":false,\"showEmployeeMap\":true,\"allowLocationEdit\":true,\"workplace\":null}' where id = 1; select (select count(*) from employees) as employees, (select string_agg(token || ':' || used, ', ') from admin_links) as links;",
+      "sql": "delete from employees where emp_no like 'T%'; delete from admin_links where token like 'tst%'; delete from admin_sessions; update settings set policy = '{\"locationTracking\":true,\"geofence\":false,\"showEmployeeMap\":true,\"allowLocationEdit\":true,\"workplace\":null}' where id = 1; select (select count(*) from employees) as employees, (select string_agg(token || ':' || used, ', ') from admin_links) as links;",
       "expect": "employees 0, links에 test- 없이 실제 링크 1개(:false)",
       "warning": "delete from admin_sessions는 사용자가 실제 관리자 링크를 쓰기 전(배포 전)에만 실행한다. 사용자가 이미 관리자로 접속했다면 이 줄을 빼고 'delete from admin_sessions where token in (테스트 세션)'처럼 범위를 좁히거나 사용자에게 묻는다."
     },
@@ -194,6 +194,8 @@
   ],
 
   "8_known_issues": [
+    "실제 관리자 링크로 admin_enter를 호출하면 1회용 링크가 소진된다. 확인은 SQL select로만 한다. (2026-10-09 실제로 발생)",
+    "테스트 링크 토큰은 영문 소문자·숫자만 허용된다. 하이픈(test-)이 들어가면 앱이 링크를 인식하지 못한다. tst 형식을 쓴다.",
     "Supabase 대시보드는 크롬 자동번역이 켜져 있으면 쿼리 결과를 표시하다 오류 화면이 뜬다. 매번 5_commands.make_test_admin_link의 번역 끄기 단계를 먼저 한다. 오류 화면이 뜨면 새로고침 후 다시 한다(쿼리는 실행되지 않았을 수 있으니 결과로 확인).",
     "SQL 편집기에서 ctrl+a 후 ctrl+v를 쓰면 맨 앞에 'a'가 들어간 적이 있다. SQL은 monaco setValue로 넣는다.",
     "관리자는 여러 명이어도 모두 '관리자' 한 명으로 표시된다(구분 기능 없음, 다음 단계 과제)."
