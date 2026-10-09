@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { adminApi } from '../data';
 import type { AttendanceFix, DayRow, LeaveRequest, Policy } from '../data/types';
 import { DEFAULT_WORK_START, formatDuration, hhmm, isLate, koreanDate, todayKey, workedMinutes } from '../lib/time';
-import { IN_COLOR, MapView, OUT_COLOR, type MapPoint } from '../components/MapView';
+import { MapView, type MapPoint } from '../components/LazyMap';
+import { IN_COLOR, OUT_COLOR } from '../lib/mapColors';
 
 export function statusOf(row: DayRow, workStart = DEFAULT_WORK_START): { label: string; cls: string } {
   if (row.leave) return { label: row.leave.type, cls: 'chip-primary' };

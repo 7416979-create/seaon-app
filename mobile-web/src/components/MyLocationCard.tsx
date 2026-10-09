@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MAX_EDIT_METERS, type Workplace } from '../data/types';
 import { distanceM, getPosition, locationPermission, type Fix } from '../lib/geo';
-import { MapView, IN_COLOR, OUT_COLOR } from './MapView';
+import { MapView } from './LazyMap';
+import { IN_COLOR, OUT_COLOR } from '../lib/mapColors';
 
 interface Props {
   workplace: Workplace | null;

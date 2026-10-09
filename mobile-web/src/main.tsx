@@ -5,7 +5,6 @@ import { registerServiceWorker } from './lib/push';
 import { captureInstallPrompt, escapeInAppBrowser } from './lib/install';
 import { applyGoParam } from './lib/links';
 import { applyLargeText } from './lib/textSize';
-import 'leaflet/dist/leaflet.css';
 import './styles.css';
 
 applyGoParam();

@@ -4,7 +4,7 @@ import { MAX_EDIT_METERS, type Holiday, type Policy, type Workplace } from '../d
 import { DEFAULT_WORK_START, dateKey } from '../lib/time';
 import { getPosition } from '../lib/geo';
 import { adminLink, copyText } from '../lib/links';
-import { MapView } from '../components/MapView';
+import { MapView } from '../components/LazyMap';
 import { useToast } from '../components/Toast';
 
 interface SearchHit {

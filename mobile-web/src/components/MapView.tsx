@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 export interface MapPoint {
   lat: number;
@@ -72,6 +73,3 @@ export function MapView({ points = [], circle, center, height = 320, onPick }: P
 
   return <div ref={el} className="map-box" style={{ height }} />;
 }
-
-export const IN_COLOR = '#1f5eff';
-export const OUT_COLOR = '#f2780c';

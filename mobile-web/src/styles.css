@@ -215,3 +215,48 @@ input[type='date'].input, input[type='time'].input { padding: 0 10px; -webkit-ap
 .large-text .page .chip {
   font-size: 15px;
 }
+
+/* 6차 M1: small fixed-size labels on employee screens, and the bottom tab bar (outside .page). */
+.large-text .page .small,
+.large-text .page .stat span,
+.large-text .page .field label,
+.large-text .page .notice,
+.large-text .page .install-banner {
+  font-size: 16px;
+}
+.large-text .page .stat b {
+  font-size: 22px;
+}
+.large-text .page .card h3 {
+  font-size: 19px;
+}
+.large-text .page .segmented button {
+  min-height: 48px;
+  font-size: 16px;
+}
+.large-text .page .clock,
+.large-text .page .home .now-clock {
+  font-size: 44px;
+}
+.large-text .page .punch-label {
+  font-size: 28px;
+}
+.large-text .page .punch-sub {
+  font-size: 16px;
+}
+.large-text .tabbar a {
+  font-size: 15px;
+}
+.large-text .toast {
+  font-size: 17px;
+}
+
+/* 6차 M2: keyboard focus outline for every employee and admin control. */
+:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+.large-text .page .segmented button { white-space: nowrap; padding: 0 6px; }
+.large-text .page .segmented[role="group"] { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; grid-auto-flow: row !important; }
+.large-text .page input[type="date"],
+.large-text .page input[type="time"] { min-width: 0; font-size: 16px; padding-left: 8px; padding-right: 8px; }

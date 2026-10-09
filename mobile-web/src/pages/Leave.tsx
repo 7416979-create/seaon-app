@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useLocation } from 'react-router-dom';
 import { api } from '../data';
-import { REQUEST_TYPES, type AttendanceFix, type LeaveBalance, type LeaveRequest, type RequestType } from '../data/types';
-import { todayKey } from '../lib/time';
+import { REQUEST_TYPES, type AttendanceFix, type AttendanceRecord, type LeaveBalance, type LeaveRequest, type RequestType } from '../data/types';
+import { hhmm, todayKey } from '../lib/time';
 import { useToast } from '../components/Toast';
 
 // Records screen passes the day to correct through location state: { fixDate: 'YYYY-MM-DD' }.
@@ -38,6 +38,7 @@ export default function Leave() {
   const [fixReason, setFixReason] = useState('');
   const [fixError, setFixError] = useState('');
   const [fixBusy, setFixBusy] = useState(false);
+  const [fixCurrent, setFixCurrent] = useState<AttendanceRecord | null | undefined>(undefined);
   const location = useLocation();
   const fixCardRef = useRef<HTMLFormElement>(null);
 
@@ -59,6 +60,14 @@ export default function Leave() {
     setFixDate(day);
     fixCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [location.state]);
+
+  // 6차 M3: show the record of the chosen day before the employee changes it. undefined = loading.
+  useEffect(() => {
+    let alive = true;
+    setFixCurrent(undefined);
+    api.getRecord(fixDate).then((r) => { if (alive) setFixCurrent(r); }).catch(() => { if (alive) setFixCurrent(null); });
+    return () => { alive = false; };
+  }, [fixDate]);
 
   async function submitFix(e: FormEvent) {
     e.preventDefault();
@@ -183,6 +192,13 @@ export default function Leave() {
         <div className="field">
           <label htmlFor="fix-date">정정할 날짜</label>
           <input id="fix-date" className="input" type="date" value={fixDate} max={todayKey()} onChange={(e) => setFixDate(e.target.value)} />
+        </div>
+        <div className="notice" style={{ background: 'var(--surface-2)', color: 'var(--text)' }} aria-live="polite">
+          {fixCurrent === undefined
+            ? <span className="muted">그날 기록을 불러오는 중…</span>
+            : fixCurrent
+              ? <>현재 기록: 출근 <b>{fixCurrent.checkIn ? hhmm(fixCurrent.checkIn) : '--:--'}</b> / 퇴근 <b>{fixCurrent.checkOut ? hhmm(fixCurrent.checkOut) : '미기록'}</b></>
+              : <span className="muted">그날 기록이 없습니다.</span>}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div className="field">
