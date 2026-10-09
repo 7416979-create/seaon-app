@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { adminApi } from '../data';
 import type { AttendanceRecord, Employee } from '../data/types';
-import { dateKey, formatDuration, hhmm, weekdayOf, workedMinutes } from '../lib/time';
+import type { Policy } from '../data/types';
+import { DEFAULT_WORK_START, dateKey, formatDuration, hhmm, isLate, weekdayOf, workedMinutes } from '../lib/time';
 import { IN_COLOR, MapView, OUT_COLOR } from '../components/MapView';
 
 const fmtLoc = (l?: { lat: number; lng: number }) => (l ? `${l.lat.toFixed(6)} ${l.lng.toFixed(6)}` : '');
@@ -21,10 +22,14 @@ export default function AdminRecords() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [mapRow, setMapRow] = useState<Row | null>(null);
+  const [policy, setPolicy] = useState<Policy | null>(null);
 
   useEffect(() => {
     adminApi.listEmployees().then(setEmployees);
+    adminApi.getPolicy().then(setPolicy);
   }, []);
+
+  const workStart = policy?.workStart ?? DEFAULT_WORK_START;
 
   useEffect(() => {
     setRows(null);
@@ -39,12 +44,11 @@ export default function AdminRecords() {
       const s = m.get(r.empId) ?? { days: 0, minutes: 0, late: 0 };
       if (r.checkIn) s.days += 1;
       s.minutes += workedMinutes(r.checkIn, r.checkOut);
-      const d = r.checkIn ? new Date(r.checkIn) : null;
-      if (d && d.getHours() * 60 + d.getMinutes() > 9 * 60) s.late += 1;
+      if (isLate(r.checkIn, workStart)) s.late += 1;
       m.set(r.empId, s);
     }
     return m;
-  }, [rows]);
+  }, [rows, workStart]);
 
   function exportCsv() {
     const header = ['날짜', '요일', '사원번호', '이름', '부서', '출근', '퇴근', '근무(분)', '출근 위치(위도 경도)', '퇴근 위치(위도 경도)'];

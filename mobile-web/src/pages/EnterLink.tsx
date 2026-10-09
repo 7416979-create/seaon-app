@@ -3,6 +3,14 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, adminApi } from '../data';
 import { Logo } from '../components/Logo';
 
+// The same link is entered only once per page load, even if the effect runs twice (React StrictMode).
+const pending = new Map<string, Promise<unknown>>();
+function enterOnce(kind: 'employee' | 'admin', token: string) {
+  const key = `${kind}:${token}`;
+  if (!pending.has(key)) pending.set(key, kind === 'employee' ? api.enterWithLink(token) : adminApi.enterWithLink(token));
+  return pending.get(key)!;
+}
+
 export default function EnterLink({ kind }: { kind: 'employee' | 'admin' }) {
   const { token = '' } = useParams();
   const navigate = useNavigate();
@@ -10,7 +18,7 @@ export default function EnterLink({ kind }: { kind: 'employee' | 'admin' }) {
 
   useEffect(() => {
     let cancelled = false;
-    (kind === 'employee' ? api.enterWithLink(token) : adminApi.enterWithLink(token))
+    enterOnce(kind, token)
       .then(() => {
         if (!cancelled) navigate(kind === 'employee' ? '/home' : '/admin', { replace: true });
       })

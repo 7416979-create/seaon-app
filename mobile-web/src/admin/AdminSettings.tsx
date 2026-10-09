@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { adminApi } from '../data';
 import { MAX_EDIT_METERS, type Policy, type Workplace } from '../data/types';
+import { DEFAULT_WORK_START } from '../lib/time';
 import { getPosition } from '../lib/geo';
 import { adminLink, copyText } from '../lib/links';
 import { MapView } from '../components/MapView';
@@ -25,9 +26,12 @@ export default function AdminSettings() {
   const [pw1, setPw1] = useState('');
   const [pw2, setPw2] = useState('');
 
+  const [workStartDraft, setWorkStartDraft] = useState(DEFAULT_WORK_START);
+
   useEffect(() => {
     adminApi.getPolicy().then((p) => {
       setPolicy(p);
+      setWorkStartDraft(p.workStart ?? DEFAULT_WORK_START);
       if (p.workplace) setWp(p.workplace);
     });
     adminApi.passwordStatus().then((s) => {
@@ -106,6 +110,18 @@ export default function AdminSettings() {
   return (
     <>
       <div className="admin-head"><h1>설정</h1></div>
+
+      <div className="card" style={{ maxWidth: 820 }}>
+        <h3>근무 시간</h3>
+        <div className="row" style={{ alignItems: 'flex-end', gap: 12 }}>
+          <div className="field">
+            <label htmlFor="work-start">출근 기준 시각</label>
+            <input id="work-start" className="input" type="time" value={workStartDraft} onChange={(e) => setWorkStartDraft(e.target.value)} />
+          </div>
+          <button className="btn btn-outline" onClick={() => savePolicy({ ...policy, workStart: workStartDraft }, '출근 기준 시각을 저장했습니다.')} disabled={!workStartDraft}>저장</button>
+        </div>
+        <div className="muted small">이 시각보다 늦게 출근하면 지각으로 집계합니다.</div>
+      </div>
 
       <div className="card" style={{ maxWidth: 820 }}>
         <h3>위치 사용</h3>

@@ -22,6 +22,7 @@ export interface Policy {
   showEmployeeMap: boolean; // employees see their own current position on a map
   allowLocationEdit: boolean; // employees may nudge their pin (within MAX_EDIT_METERS of the GPS fix)
   workplace: Workplace | null;
+  workStart?: string; // 'HH:MM', check-in after this time counts as late (default '09:00')
 }
 
 export const MAX_EDIT_METERS = 300;

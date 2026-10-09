@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { adminApi } from '../data';
 import type { Employee, NewEmployee } from '../data/types';
 import { todayKey } from '../lib/time';
@@ -6,6 +6,28 @@ import { copyText, employeeLink } from '../lib/links';
 import { useToast } from '../components/Toast';
 
 const EMPTY: NewEmployee = { empNo: '', name: '', email: '', dept: '', position: '사원', joinDate: todayKey(), annualLeave: 15 };
+
+type BulkRow = { line: string; error: string; data: NewEmployee };
+
+// Parses rows pasted from a spreadsheet: 사원번호, 이름, 부서, 직급, 입사일, 연차일수 (tab or comma separated).
+function parseBulk(text: string, existing: Set<string>): BulkRow[] {
+  const seen = new Set<string>();
+  return text
+    .split(/\r?\n/)
+    .filter((l) => l.trim() && !/^\s*사원번호/.test(l))
+    .map((line) => {
+      const cols = (line.includes('\t') ? line.split('\t') : line.split(',')).map((c) => c.trim());
+      const [empNo = '', name = '', dept = '', position = '', joinDate = '', leave = ''] = cols;
+      const annual = leave === '' ? 15 : Number(leave);
+      let error = '';
+      if (!empNo || !name) error = '사원번호와 이름은 필수입니다.';
+      else if (joinDate && !/^\d{4}-\d{2}-\d{2}$/.test(joinDate)) error = '입사일은 YYYY-MM-DD 형식이어야 합니다.';
+      else if (existing.has(empNo) || seen.has(empNo)) error = '사원번호가 중복됩니다.';
+      else if (!Number.isFinite(annual) || annual < 0 || annual > 30) error = '연차는 0~30 사이 숫자여야 합니다.';
+      seen.add(empNo);
+      return { line, error, data: { empNo, name, email: '', dept, position: position || '사원', joinDate: joinDate || todayKey(), annualLeave: annual } };
+    });
+}
 
 export default function AdminEmployees() {
   const toast = useToast();
@@ -15,6 +37,10 @@ export default function AdminEmployees() {
   const [editing, setEditing] = useState<Employee | null>(null);
   const [created, setCreated] = useState<Employee | null>(null);
   const [error, setError] = useState('');
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkText, setBulkText] = useState('');
+  const [bulkResults, setBulkResults] = useState<{ line: string; ok: boolean; msg: string; emp?: Employee }[] | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const load = useCallback(() => adminApi.listEmployees().then(setList), []);
   useEffect(() => {
@@ -22,10 +48,39 @@ export default function AdminEmployees() {
   }, [load]);
 
   const shown = (list ?? []).filter((e) => !q || [e.name, e.empNo, e.dept, e.email].some((v) => v.toLowerCase().includes(q.toLowerCase())));
+  const bulkRows = useMemo(() => parseBulk(bulkText, new Set((list ?? []).map((e) => e.empNo))), [bulkText, list]);
 
   async function copyLink(e: Employee) {
     const ok = await copyText(employeeLink(e.linkToken));
     toast(ok ? `${e.name}님 링크를 복사했습니다. 카카오톡·문자로 보내 주세요.` : '복사에 실패했습니다.');
+  }
+
+  // One line per person: "이름 (사원번호): 링크"
+  async function copyLinks(emps: Employee[]) {
+    const text = emps.map((e) => `${e.name} (${e.empNo}): ${employeeLink(e.linkToken)}`).join('\n');
+    const ok = await copyText(text);
+    toast(ok ? `직원 ${emps.length}명의 링크를 복사했습니다.` : '복사에 실패했습니다.');
+  }
+
+  async function registerBulk() {
+    setBulkBusy(true);
+    const results: { line: string; ok: boolean; msg: string; emp?: Employee }[] = [];
+    // One at a time, so the server sees each registration in order.
+    for (const r of bulkRows) {
+      if (r.error) {
+        results.push({ line: r.line, ok: false, msg: r.error });
+        continue;
+      }
+      try {
+        const emp = await adminApi.createEmployee(r.data);
+        results.push({ line: r.line, ok: true, msg: `${emp.name} 등록 완료`, emp });
+      } catch (e) {
+        results.push({ line: r.line, ok: false, msg: (e as Error).message });
+      }
+    }
+    setBulkResults(results);
+    setBulkBusy(false);
+    load();
   }
 
   async function newLink(e: Employee) {
@@ -75,7 +130,11 @@ export default function AdminEmployees() {
     <>
       <div className="admin-head">
         <h1>직원 관리</h1>
-        <button className="btn btn-sm btn-primary" onClick={() => { setError(''); setForm({ ...EMPTY }); }}>+ 직원 등록</button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn btn-sm btn-outline" onClick={() => copyLinks((list ?? []).filter((e) => e.active).sort((a, b) => a.empNo.localeCompare(b.empNo)))} disabled={!list?.some((e) => e.active)}>전체 링크 복사</button>
+          <button className="btn btn-sm btn-outline" onClick={() => { setBulkText(''); setBulkResults(null); setBulkOpen(true); }}>여러 명 등록</button>
+          <button className="btn btn-sm btn-primary" onClick={() => { setError(''); setForm({ ...EMPTY }); }}>+ 직원 등록</button>
+        </div>
       </div>
 
       <div className="notice notice-info small">
@@ -134,6 +193,53 @@ export default function AdminEmployees() {
               <button className="btn btn-primary">등록</button>
             </div>
           </form>
+        </div>
+      )}
+
+      {bulkOpen && (
+        <div className="modal-backdrop" onClick={() => !bulkBusy && setBulkOpen(false)}>
+          <div className="modal" style={{ maxWidth: 720 }} role="dialog" aria-modal="true" aria-labelledby="bk-title" onClick={(e) => e.stopPropagation()}>
+            <h2 id="bk-title">여러 명 등록</h2>
+            <div className="muted small">엑셀에서 아래 순서대로 복사해 붙여 넣으세요: 사원번호, 이름, 부서, 직급, 입사일(YYYY-MM-DD), 연차일수. 부서 이후는 비워도 됩니다. 첫 줄이 '사원번호'로 시작하는 머리글은 자동으로 건너뜁니다.</div>
+            <textarea className="input" rows={7} aria-label="직원 명단" placeholder={'T001\t홍길동\t영업팀\t사원\t2026-10-01\t15'} value={bulkText} onChange={(e) => { setBulkText(e.target.value); setBulkResults(null); }} disabled={bulkBusy} />
+
+            {!bulkResults && bulkRows.length > 0 && (
+              <div className="table-wrap" style={{ maxHeight: 260 }}>
+                <table className="tbl">
+                  <thead><tr><th>사원번호</th><th>이름</th><th>부서</th><th>직급</th><th>입사일</th><th className="num">연차</th><th>확인</th></tr></thead>
+                  <tbody>
+                    {bulkRows.map((r, i) => (
+                      <tr key={i}>
+                        <td>{r.data.empNo}</td><td>{r.data.name}</td><td>{r.data.dept}</td><td>{r.data.position}</td><td>{r.data.joinDate}</td>
+                        <td className="num">{r.data.annualLeave}</td>
+                        <td>{r.error ? <span className="chip chip-warn">{r.error}</span> : <span className="chip chip-ok">등록 가능</span>}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {bulkResults && (
+              <div className="stack">
+                {bulkResults.map((r, i) => (
+                  <div key={i} className={`notice ${r.ok ? 'notice-info' : 'notice-danger'} small`}>{r.ok ? '✓' : '✗'} {r.msg}</div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <button type="button" className="btn btn-outline" onClick={() => setBulkOpen(false)} disabled={bulkBusy}>닫기</button>
+              {bulkResults && bulkResults.some((r) => r.ok) && (
+                <button type="button" className="btn btn-outline" onClick={() => copyLinks(bulkResults.filter((r) => r.ok && r.emp).map((r) => r.emp!))}>방금 등록한 직원 링크 복사</button>
+              )}
+              {!bulkResults && (
+                <button type="button" className="btn btn-primary" onClick={registerBulk} disabled={bulkBusy || bulkRows.every((r) => r.error)}>
+                  {bulkBusy ? '등록 중…' : `${bulkRows.filter((r) => !r.error).length}명 등록`}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

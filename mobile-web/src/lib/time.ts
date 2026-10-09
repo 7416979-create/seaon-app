@@ -20,6 +20,16 @@ export function workedMinutes(checkIn?: string, checkOut?: string, now = new Dat
   return Math.max(0, Math.round((end.getTime() - new Date(checkIn).getTime()) / 60000));
 }
 
+export const DEFAULT_WORK_START = '09:00';
+
+// Late means checking in after the company's work-start time ('HH:MM').
+export function isLate(iso?: string, workStart = DEFAULT_WORK_START): boolean {
+  if (!iso) return false;
+  const [h, m] = workStart.split(':').map(Number);
+  const d = new Date(iso);
+  return d.getHours() * 60 + d.getMinutes() > h * 60 + m;
+}
+
 export function formatDuration(min: number): string {
   const h = Math.floor(min / 60);
   const m = min % 60;
