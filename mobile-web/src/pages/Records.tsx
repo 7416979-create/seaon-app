@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../data';
 import type { AttendanceRecord } from '../data/types';
 import { formatDuration, hhmm, monthKey, todayKey, weekdayOf, workedMinutes } from '../lib/time';
@@ -6,6 +7,7 @@ import { formatDuration, hhmm, monthKey, todayKey, weekdayOf, workedMinutes } fr
 export default function Records() {
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [records, setRecords] = useState<AttendanceRecord[] | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setRecords(null);
@@ -51,13 +53,19 @@ export default function Records() {
                       {hhmm(r.checkIn)} ~ {hhmm(r.checkOut)}
                     </div>
                   </div>
-                  {open ? (
-                    <span className={`chip ${r.date === todayKey() ? 'chip-ok' : 'chip-warn'}`}>
-                      {r.date === todayKey() ? '근무 중' : '퇴근 누락'}
-                    </span>
-                  ) : (
-                    <span className="chip">{formatDuration(workedMinutes(r.checkIn, r.checkOut))}</span>
-                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    {open ? (
+                      <span className={`chip ${r.date === todayKey() ? 'chip-ok' : 'chip-warn'}`}>
+                        {r.date === todayKey() ? '근무 중' : '퇴근 누락'}
+                      </span>
+                    ) : (
+                      <span className="chip">{formatDuration(workedMinutes(r.checkIn, r.checkOut))}</span>
+                    )}
+                    {r.fixed && <span className="chip chip-ok">정정됨</span>}
+                    {r.date !== todayKey() && (
+                      <button className="btn btn-sm btn-outline" onClick={() => navigate('/leave', { state: { fixDate: r.date } })}>정정</button>
+                    )}
+                  </div>
                 </div>
               );
             })}

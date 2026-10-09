@@ -191,3 +191,27 @@ input[type='date'].input, input[type='time'].input { padding: 0 10px; -webkit-ap
 .install-close { border: 0; background: transparent; font-size: 22px; line-height: 1; color: var(--text-2); padding: 4px 6px; }
 
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2s; } .popup { animation: none; } }
+
+/* ── 큰 글씨 보기 (직원 화면, 5차 L7). Set by lib/textSize.ts; admin screens are not affected. ── */
+.large-text .page {
+  font-size: 18px;
+}
+.large-text .page .muted {
+  color: #3d4659;
+}
+.large-text .page .btn {
+  min-height: 56px;
+  font-size: 18px;
+}
+.large-text .page .btn-sm {
+  min-height: 44px;
+  font-size: 16px;
+}
+.large-text .page .input,
+.large-text .page textarea.input {
+  min-height: 52px;
+  font-size: 18px;
+}
+.large-text .page .chip {
+  font-size: 15px;
+}

@@ -1,8 +1,17 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { useLocation } from 'react-router-dom';
 import { api } from '../data';
-import { REQUEST_TYPES, type LeaveBalance, type LeaveRequest, type RequestType } from '../data/types';
+import { REQUEST_TYPES, type AttendanceFix, type LeaveBalance, type LeaveRequest, type RequestType } from '../data/types';
 import { todayKey } from '../lib/time';
 import { useToast } from '../components/Toast';
+
+// Records screen passes the day to correct through location state: { fixDate: 'YYYY-MM-DD' }.
+const FIX_STATUS_CHIP: Record<AttendanceFix['status'], string> = {
+  대기: 'chip-warn',
+  승인: 'chip-ok',
+  반려: 'chip-danger',
+  취소: '',
+};
 
 const STATUS_CHIP: Record<LeaveRequest['status'], string> = {
   대기: 'chip-warn',
@@ -22,16 +31,60 @@ export default function Leave() {
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [fixes, setFixes] = useState<AttendanceFix[]>([]);
+  const [fixDate, setFixDate] = useState(todayKey());
+  const [fixIn, setFixIn] = useState('');
+  const [fixOut, setFixOut] = useState('');
+  const [fixReason, setFixReason] = useState('');
+  const [fixError, setFixError] = useState('');
+  const [fixBusy, setFixBusy] = useState(false);
+  const location = useLocation();
+  const fixCardRef = useRef<HTMLFormElement>(null);
 
   const load = useCallback(async () => {
-    const [b, l] = await Promise.all([api.leaveBalance(), api.listRequests()]);
+    const [b, l, f] = await Promise.all([api.leaveBalance(), api.listRequests(), api.listFixes()]);
     setBalance(b);
     setList(l);
+    setFixes(f);
   }, []);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Opened from a record: pre-fill the date and scroll to the correction form.
+  useEffect(() => {
+    const day = (location.state as { fixDate?: string } | null)?.fixDate;
+    if (!day) return;
+    setFixDate(day);
+    fixCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [location.state]);
+
+  async function submitFix(e: FormEvent) {
+    e.preventDefault();
+    setFixError('');
+    if (!fixIn && !fixOut) return setFixError('출근 또는 퇴근 시각을 입력해 주세요.');
+    if (!fixReason.trim()) return setFixError('정정 사유를 입력해 주세요.');
+    setFixBusy(true);
+    try {
+      await api.createFix({ date: fixDate, checkIn: fixIn || undefined, checkOut: fixOut || undefined, reason: fixReason.trim() });
+      setFixIn('');
+      setFixOut('');
+      setFixReason('');
+      toast('정정 신청이 접수되었습니다. 관리자 승인 후 기록에 반영됩니다.');
+      load();
+    } catch (err) {
+      setFixError((err as Error).message);
+    } finally {
+      setFixBusy(false);
+    }
+  }
+
+  async function cancelFix(id: string) {
+    await api.cancelFix(id);
+    toast('정정 신청을 취소했습니다.');
+    load();
+  }
 
   const needsTime = type === '외출' || type === '조퇴';
   const isRange = type === '연차';
@@ -122,6 +175,56 @@ export default function Leave() {
           {busy ? '접수 중…' : '신청하기'}
         </button>
         <div className="muted small">신청 후 관리자 승인이 필요합니다.</div>
+      </form>
+
+      <form className="card stack" onSubmit={submitFix} aria-label="출퇴근 정정 신청" ref={fixCardRef}>
+        <h3 style={{ margin: 0 }}>출퇴근 정정 신청</h3>
+        <div className="muted small">퇴근을 깜빡했거나 시각이 틀렸을 때 신청합니다. 어제부터 31일 이내의 날짜만 가능합니다.</div>
+        <div className="field">
+          <label htmlFor="fix-date">정정할 날짜</label>
+          <input id="fix-date" className="input" type="date" value={fixDate} max={todayKey()} onChange={(e) => setFixDate(e.target.value)} />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div className="field">
+            <label htmlFor="fix-in">출근 시각 (바꿀 때만)</label>
+            <input id="fix-in" className="input" type="time" value={fixIn} onChange={(e) => setFixIn(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="fix-out">퇴근 시각 (바꿀 때만)</label>
+            <input id="fix-out" className="input" type="time" value={fixOut} onChange={(e) => setFixOut(e.target.value)} />
+          </div>
+        </div>
+        <div className="field">
+          <label htmlFor="fix-reason">사유</label>
+          <textarea id="fix-reason" className="input" value={fixReason} onChange={(e) => setFixReason(e.target.value)} placeholder="예) 퇴근 체크를 깜빡함" />
+        </div>
+        {fixError && <div className="notice notice-danger" role="alert">{fixError}</div>}
+        <button className="btn btn-primary btn-block" type="submit" disabled={fixBusy}>
+          {fixBusy ? '접수 중…' : '정정 신청하기'}
+        </button>
+
+        {fixes.length > 0 && (
+          <div className="list">
+            {fixes.map((f) => (
+              <div key={f.id} className="list-item">
+                <div style={{ minWidth: 0 }}>
+                  <b>{f.date}</b>{' '}
+                  <span className="muted small">
+                    {f.checkIn ?? '-'} → {f.checkOut ?? '-'}
+                  </span>
+                  <div className="muted small" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.reason}</div>
+                  {f.decisionNote && <div className="small" style={{ color: 'var(--danger)' }}>관리자: {f.decisionNote}</div>}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span className={`chip ${FIX_STATUS_CHIP[f.status]}`}>{f.status}</span>
+                  {f.status === '대기' && (
+                    <button type="button" className="btn btn-sm btn-outline" onClick={() => cancelFix(f.id)}>취소</button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </form>
 
       <section className="card" aria-label="신청 내역">

@@ -1,4 +1,4 @@
-import type { Admin, AdminApi, Api, AttendanceRecord, DayRow, Employee, LeaveBalance, LeaveRequest, Policy, User } from './types';
+import type { Admin, AdminApi, Api, AttendanceFix, AttendanceRecord, DayRow, Employee, Holiday, LeaveBalance, LeaveRequest, Policy, User } from './types';
 
 // Server mode: every call goes to a Postgres function in Supabase (see supabase/schema.sql).
 // Tables are closed to the public key; the functions check the session token we send.
@@ -87,6 +87,17 @@ export const supabaseApi: Api = {
     }),
   cancelRequest: (id) => rpc<void>('emp_cancel_request', { p_session: userToken(), p_id: id }),
   leaveBalance: () => rpc<LeaveBalance>('emp_balance', { p_session: userToken() }),
+  listFixes: () => rpc<AttendanceFix[]>('emp_fixes', { p_session: userToken() }),
+  createFix: (f) =>
+    rpc<AttendanceFix>('emp_fix_create', {
+      p_session: userToken(),
+      p_date: f.date,
+      p_in: f.checkIn ?? null,
+      p_out: f.checkOut ?? null,
+      p_reason: f.reason,
+    }),
+  cancelFix: (id) => rpc<void>('emp_fix_cancel', { p_session: userToken(), p_id: id }),
+  holidays: (from, to) => rpc<Holiday[]>('get_holidays', { p_session: userToken(), p_from: from, p_to: to }),
 };
 
 async function startAdmin(p: Promise<{ session: string; admin: Admin }>): Promise<Admin> {
@@ -124,4 +135,11 @@ export const supabaseAdminApi: AdminApi = {
   leaveBalanceOf: (empId) => rpc<LeaveBalance>('admin_balance', { p_session: adminToken(), p_emp: empId }),
   getPolicy: () => rpc<Policy>('get_policy', { p_session: adminToken() }),
   setPolicy: (p) => rpc<void>('admin_set_policy', { p_session: adminToken(), p }),
+  listFixes: (status) => rpc<AttendanceFix[]>('admin_fixes', { p_session: adminToken(), p_status: status ?? null }),
+  decideFix: (id, status, note) =>
+    rpc<void>('admin_fix_decide', { p_session: adminToken(), p_id: id, p_status: status, p_note: note ?? null }),
+  holidays: (from, to) => rpc<Holiday[]>('get_holidays', { p_session: adminToken(), p_from: from, p_to: to }),
+  setHoliday: (date, name) => rpc<void>('admin_set_holiday', { p_session: adminToken(), p_day: date, p_name: name }),
+  deleteHoliday: (date) => rpc<void>('admin_delete_holiday', { p_session: adminToken(), p_day: date }),
+  exportAll: () => rpc<unknown>('admin_export', { p_session: adminToken() }),
 };

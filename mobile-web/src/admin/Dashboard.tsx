@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminApi } from '../data';
-import type { DayRow, LeaveRequest, Policy } from '../data/types';
+import type { AttendanceFix, DayRow, LeaveRequest, Policy } from '../data/types';
 import { DEFAULT_WORK_START, formatDuration, hhmm, isLate, koreanDate, todayKey, workedMinutes } from '../lib/time';
 import { IN_COLOR, MapView, OUT_COLOR, type MapPoint } from '../components/MapView';
 
@@ -16,12 +16,16 @@ export function statusOf(row: DayRow, workStart = DEFAULT_WORK_START): { label: 
 export default function Dashboard() {
   const [rows, setRows] = useState<DayRow[] | null>(null);
   const [pending, setPending] = useState<LeaveRequest[]>([]);
+  const [pendingFixes, setPendingFixes] = useState<AttendanceFix[]>([]); // 출퇴근 정정 신청 (5차)
+  const [todayHoliday, setTodayHoliday] = useState<string | null>(null); // 오늘이 공휴일이면 그 이름 (5차)
   const [policy, setPolicy] = useState<Policy | null>(null);
   const now = new Date();
 
   useEffect(() => {
     adminApi.dayStatus(todayKey()).then(setRows);
     adminApi.listRequests('대기').then(setPending);
+    adminApi.listFixes('대기').then(setPendingFixes);
+    adminApi.holidays(todayKey(), todayKey()).then((hs) => setTodayHoliday(hs[0] ? hs[0].name || '공휴일' : null));
     adminApi.getPolicy().then(setPolicy);
   }, []);
 
@@ -59,8 +63,12 @@ export default function Dashboard() {
         <div className="kpi"><span>지각 ({workStart} 이후)</span><b style={{ color: 'var(--warn)' }}>{late}</b></div>
         <div className="kpi"><span>휴가·외출</span><b>{onLeave}</b></div>
         <div className="kpi"><span>미출근</span><b style={{ color: absent ? 'var(--danger)' : undefined }}>{absent}</b></div>
-        <div className="kpi"><span>승인 대기 신청</span><b>{pending.length}</b></div>
+        <div className="kpi"><span>승인 대기 신청</span><b>{pending.length + pendingFixes.length}</b></div>
       </div>
+
+      {todayHoliday && (
+        <div className="notice notice-info small" style={{ marginBottom: 8 }}>오늘은 공휴일({todayHoliday})입니다. 근무일 집계에서 빠집니다.</div>
+      )}
 
       {pending.length > 0 && (
         <div className="notice notice-warn row">

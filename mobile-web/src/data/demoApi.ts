@@ -9,6 +9,8 @@ import type {
   LeaveRequest,
   Policy,
   User,
+  AttendanceFix,
+  Holiday,
 } from './types';
 import { dateKey, todayKey } from '../lib/time';
 
@@ -23,6 +25,8 @@ interface Db {
   requests: LeaveRequest[];
   policy: Policy;
   adminLinks: Array<{ token: string; used: boolean }>;
+  fixes?: AttendanceFix[]; // added in 5차; older saved data has none
+  holidays?: Holiday[];
 }
 
 const DB_KEY = 'seaon.db.v5';
@@ -261,7 +265,54 @@ export const demoApi: Api = {
   async leaveBalance() {
     return balanceOf(load(), requireUser().id);
   },
+
+  async listFixes() {
+    const me = requireUser();
+    return (load().fixes ?? []).filter((f) => f.empId === me.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+
+  // Same rules as the server function emp_fix_create.
+  async createFix(f) {
+    await delay();
+    const me = requireUser();
+    const db = load();
+    const today = todayKey();
+    if (f.date > today) throw new Error('미래 날짜는 정정할 수 없습니다.');
+    if (dayDiff(today, f.date) > 31) throw new Error('31일이 지난 기록은 정정할 수 없습니다. 관리자에게 문의하세요.');
+    if (!f.checkIn && !f.checkOut) throw new Error('출근 또는 퇴근 시각을 입력해 주세요.');
+    if (!f.reason.trim()) throw new Error('정정 사유를 입력해 주세요.');
+    const fixes = (db.fixes ??= []);
+    if (fixes.some((x) => x.empId === me.id && x.date === f.date && x.status === '대기')) {
+      throw new Error('같은 날짜의 정정 신청이 이미 대기 중입니다.');
+    }
+    const item: AttendanceFix = {
+      id: uid(), empId: me.id, empName: me.name, date: f.date,
+      checkIn: f.checkIn || undefined, checkOut: f.checkOut || undefined,
+      reason: f.reason.trim(), status: '대기', createdAt: new Date().toISOString(),
+    };
+    fixes.push(item);
+    save(db);
+    return item;
+  },
+
+  async cancelFix(id) {
+    const me = requireUser();
+    const db = load();
+    const item = (db.fixes ?? []).find((x) => x.id === id && x.empId === me.id);
+    if (item && item.status === '대기') item.status = '취소';
+    save(db);
+  },
+
+  async holidays(from, to) {
+    requireUser();
+    return (load().holidays ?? []).filter((h) => h.date >= from && h.date <= to).sort((a, b) => a.date.localeCompare(b.date));
+  },
 };
+
+// Whole days from a to b (YYYY-MM-DD).
+function dayDiff(a: string, b: string): number {
+  return Math.round((new Date(a).getTime() - new Date(b).getTime()) / 86400000);
+}
 
 export const adminApi: AdminApi = {
   async enterWithLink(token) {
@@ -402,6 +453,64 @@ export const adminApi: AdminApi = {
     db.policy = p;
     save(db);
   },
+
+  async listFixes(status) {
+    requireAdmin();
+    return (load().fixes ?? []).filter((f) => !status || f.status === status).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+
+  // Approving writes the corrected times into the employee's record and marks it fixed.
+  async decideFix(id, status, note) {
+    requireAdmin();
+    const db = load();
+    const f = (db.fixes ?? []).find((x) => x.id === id);
+    if (!f) throw new Error('정정 신청을 찾을 수 없습니다.');
+    if (f.status !== '대기') throw new Error('이미 처리된 신청입니다.');
+    f.status = status;
+    f.decidedAt = new Date().toISOString();
+    if (note) f.decisionNote = note;
+    if (status === '승인') {
+      const mine = (db.records[f.empId] ??= {});
+      const rec = mine[f.date] ?? { date: f.date };
+      mine[f.date] = { ...rec, checkIn: f.checkIn ? at(f.date, ...hm(f.checkIn)) : rec.checkIn, checkOut: f.checkOut ? at(f.date, ...hm(f.checkOut)) : rec.checkOut, fixed: true };
+    }
+    save(db);
+  },
+
+  async holidays(from, to) {
+    requireAdmin();
+    return (load().holidays ?? []).filter((h) => h.date >= from && h.date <= to).sort((a, b) => a.date.localeCompare(b.date));
+  },
+
+  async setHoliday(date, name) {
+    requireAdmin();
+    const db = load();
+    const list = (db.holidays ??= []).filter((h) => h.date !== date);
+    list.push({ date, name: name.trim() });
+    db.holidays = list;
+    save(db);
+  },
+
+  async deleteHoliday(date) {
+    requireAdmin();
+    const db = load();
+    db.holidays = (db.holidays ?? []).filter((h) => h.date !== date);
+    save(db);
+  },
+
+  async exportAll() {
+    requireAdmin();
+    const db = load();
+    // Same rule as the server: link tokens are never exported.
+    const employees = db.employees.map(({ linkToken: _t, ...rest }) => { void _t; return rest; });
+    return { exportedAt: new Date().toISOString(), ...db, version: 1, employees, adminLinks: undefined };
+  },
 };
+
+// 'HH:MM' → [hour, minute] for the at() helper above.
+function hm(t: string): [number, number] {
+  const [h, m] = t.split(':').map(Number);
+  return [h, m];
+}
 
 export const DEMO_EMPLOYEE_TOKEN = SAMPLE[0].linkToken;

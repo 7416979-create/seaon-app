@@ -4,6 +4,7 @@ import { api, IS_DEMO } from '../data';
 import { browserKind } from '../lib/geo';
 import { canOneTapInstall, oneTapInstall, onInstallChange } from '../lib/install';
 import { enableNotifications, isStandalone, pushSupport, showTestNotification } from '../lib/push';
+import { getLargeText, setLargeText } from '../lib/textSize';
 import { useToast } from '../components/Toast';
 
 export default function MyPage() {
@@ -14,6 +15,7 @@ export default function MyPage() {
     'Notification' in window ? Notification.permission : 'unsupported',
   );
   const [canInstall, setCanInstall] = useState(canOneTapInstall());
+  const [largeText, setLargeTextState] = useState(getLargeText());
   const push = pushSupport();
   const kind = browserKind();
 
@@ -55,6 +57,19 @@ export default function MyPage() {
           {user.email && <div className="list-item"><span className="muted">이메일</span><span>{user.email}</span></div>}
           <div className="list-item"><span className="muted">소속</span><span>{user.dept}</span></div>
           <div className="list-item"><span className="muted">입사일</span><span>{user.joinDate}</span></div>
+        </div>
+      </section>
+
+      <section className="card" aria-label="화면 설정">
+        <div className="switch-row">
+          <div>
+            <b>큰 글씨로 보기</b>
+            <div className="muted small">글자와 버튼을 크게 보여 줍니다. 이 휴대폰에만 저장됩니다.</div>
+          </div>
+          <label className="switch">
+            <input type="checkbox" checked={largeText} onChange={(e) => { setLargeText(e.target.checked); setLargeTextState(e.target.checked); }} />
+            <span />
+          </label>
         </div>
       </section>
 

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { adminApi } from '../data';
-import { MAX_EDIT_METERS, type Policy, type Workplace } from '../data/types';
-import { DEFAULT_WORK_START } from '../lib/time';
+import { MAX_EDIT_METERS, type Holiday, type Policy, type Workplace } from '../data/types';
+import { DEFAULT_WORK_START, dateKey } from '../lib/time';
 import { getPosition } from '../lib/geo';
 import { adminLink, copyText } from '../lib/links';
 import { MapView } from '../components/MapView';
@@ -27,6 +27,58 @@ export default function AdminSettings() {
   const [pw2, setPw2] = useState('');
 
   const [workStartDraft, setWorkStartDraft] = useState(DEFAULT_WORK_START);
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
+  const [holDate, setHolDate] = useState('');
+  const [holName, setHolName] = useState('');
+
+  // The year shown: current year and the next one, so the list covers the period you enter in advance.
+  const loadHolidays = useCallback(() => {
+    const y = new Date().getFullYear();
+    adminApi.holidays(`${y}-01-01`, `${y + 1}-12-31`).then(setHolidays);
+  }, []);
+
+  useEffect(() => {
+    loadHolidays();
+  }, [loadHolidays]);
+
+  async function addHoliday(e: FormEvent) {
+    e.preventDefault();
+    try {
+      await adminApi.setHoliday(holDate, holName.trim());
+      setHolDate('');
+      setHolName('');
+      toast('공휴일을 추가했습니다.');
+      loadHolidays();
+    } catch (err) {
+      toast((err as Error).message);
+    }
+  }
+
+  // Backup file: everything except personal link tokens (the server never sends them in this export).
+  async function downloadBackup() {
+    try {
+      const data = await adminApi.exportAll();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `seaon-backup-${dateKey(new Date())}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast('백업 파일을 내려받았습니다. NAS에 옮겨 보관하세요.');
+    } catch (err) {
+      toast((err as Error).message);
+    }
+  }
+
+  async function removeHoliday(date: string) {
+    try {
+      await adminApi.deleteHoliday(date);
+      toast('공휴일을 삭제했습니다.');
+      loadHolidays();
+    } catch (err) {
+      toast((err as Error).message);
+    }
+  }
 
   useEffect(() => {
     adminApi.getPolicy().then((p) => {
@@ -121,6 +173,34 @@ export default function AdminSettings() {
           <button className="btn btn-outline" onClick={() => savePolicy({ ...policy, workStart: workStartDraft }, '출근 기준 시각을 저장했습니다.')} disabled={!workStartDraft}>저장</button>
         </div>
         <div className="muted small">이 시각보다 늦게 출근하면 지각으로 집계합니다.</div>
+      </div>
+
+      <div className="card stack" style={{ maxWidth: 820 }}>
+        <h3 style={{ margin: 0 }}>공휴일</h3>
+        <div className="muted small">공휴일은 근무일에서 빠집니다. 매년 초에 그 해 공휴일을 입력해 주세요. (실제 날짜는 직접 입력합니다)</div>
+        <form className="toolbar" onSubmit={addHoliday}>
+          <div className="field">
+            <label htmlFor="hol-date">날짜</label>
+            <input id="hol-date" className="input" type="date" value={holDate} onChange={(e) => setHolDate(e.target.value)} />
+          </div>
+          <div className="field" style={{ flex: 1, minWidth: 160 }}>
+            <label htmlFor="hol-name">이름</label>
+            <input id="hol-name" className="input" value={holName} onChange={(e) => setHolName(e.target.value)} placeholder="예) 추석" />
+          </div>
+          <button className="btn btn-outline" disabled={!holDate || !holName.trim()}>추가</button>
+        </form>
+        {holidays.length === 0 ? (
+          <div className="muted small">입력된 공휴일이 없습니다.</div>
+        ) : (
+          <div className="list">
+            {holidays.map((h) => (
+              <div key={h.date} className="list-item">
+                <span><b>{h.date}</b> <span className="muted small">{h.name}</span></span>
+                <button className="btn btn-sm btn-outline" onClick={() => removeHoliday(h.date)}>삭제</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="card" style={{ maxWidth: 820 }}>
@@ -252,6 +332,12 @@ export default function AdminSettings() {
         </div>
         <div><button className="btn btn-outline" disabled={pw1.length < 8}>비밀번호 저장</button></div>
       </form>
+
+      <div className="card stack" style={{ maxWidth: 820 }}>
+        <h3 style={{ margin: 0 }}>데이터 백업</h3>
+        <div className="muted small">직원·출퇴근·신청·정정·공휴일·설정을 파일 하나로 내려받습니다. 개인 정보가 들어 있으니 NAS 같은 안전한 곳에만 보관하세요. 개인 링크는 들어 있지 않습니다.</div>
+        <div><button className="btn btn-outline" onClick={downloadBackup}>백업 파일 내려받기</button></div>
+      </div>
     </>
   );
 }

@@ -1,0 +1,197 @@
+{
+  "document": "업무 인수인계서 5차",
+  "project": "세아온 근태관리 – 출퇴근 정정, 공휴일, 월별 요약, 큰 글씨, 백업",
+  "from": { "role": "개발 팀장", "name": "Claude Opus 5.5" },
+  "to": { "role": "개발 팀원", "name": "Claude Haiku" },
+  "date": "2026-10-11",
+  "user_approval": "대표가 5개 기능 묶음을 승인함('응, 작업하자'). 이 문서 L0~L12 범위의 코드 수정, 실서버 마이그레이션 적용, 커밋, 배포까지 승인됨. 범위 밖 변경은 하지 말고 보고.",
+  "mailbox": "우편함: C:\\Users\\A\\Desktop\\인수인계 보고서. 이 파일과 LESSONS_FOR_HAIKU.md를 읽은 뒤 우편함에서 지운다(원본은 프로젝트·NAS에 있음). 끝나면 REPORT_HAIKU_L.md를 프로젝트에 커밋하고 우편함에도 복사.",
+
+  "0_rules": [
+    "가장 먼저 mobile-web/LESSONS_FOR_HAIKU.md를 읽고, 보고서 맨 위에 'LESSONS_FOR_HAIKU 규칙 확인함'을 적는다.",
+    "L0 → L12 순서. done_when을 직접 확인해야 ✅. 못 하면 '미확인'과 이유.",
+    "보고: 한국어 표. 축하 문구 금지. 같은 방법으로 30분 이상 막히면 시도 내용과 오류 원문을 적고 멈춘다.",
+    "코드 스타일은 주변 코드 그대로. 새 라이브러리 금지. 코드를 고칠 때마다 tsc 두 개 통과 확인.",
+    "커밋 메시지는 claude-work에 파일로 쓰고 git commit -F. 마지막 줄은 시스템이 지정한 Co-Authored-By. 커밋 전 git diff --stat으로 예상 밖 파일·줄 수가 없는지 확인.",
+    "schema.sql은 이번에 고치지 않는다. 앞으로 DB 변경은 migrations 폴더 파일로만 한다(README에 순서 안내)."
+  ],
+
+  "1_absolute_prohibitions": [
+    "실제 직원(사원번호가 TST로 시작하지 않는 모든 직원, 지금은 0001·0002)의 링크를 열거나 emp_enter로 호출하지 않는다. 그들의 출퇴근·신청·정정 데이터를 만들거나 바꾸지 않는다.",
+    "실제 직원 데이터 수정·삭제 금지. 테스트 직원은 사원번호 TST로 시작, 삭제는 emp_no like 'TST%'로만.",
+    "admin_sessions 테이블을 직접 지우지 않는다. 테스트 관리자 세션은 admin_logout 또는 화면 로그아웃으로만 끝낸다.",
+    "관리자 링크는 테스트용 tst 토큰만. 대표 링크(b7sh…)와 무관.",
+    "settings.policy(회사 위치·근무 시간)를 바꾸지 않는다. 설정 화면에서 기존 카드의 저장 버튼을 누르지 않는다.",
+    "공휴일 테스트는 2099년 날짜만 쓰고(이름 'TST'), 끝나면 지운다. 실제 공휴일은 대표가 입력한다.",
+    "migrations/2026-10-11-fixes-holidays-backup.sql 내용을 수정하지 않는다(팀장 작성). 오류가 나면 원문을 보고하고 멈춘다.",
+    "service_role/secret 키 열람 금지, .env 커밋 금지, force push 금지, 로그인·비밀번호 입력 금지. 토큰을 문서·커밋·채팅에 쓰지 않는다(비밀 검사: Select-String -Pattern 'b7sh[a-z0-9]{12}')."
+  ],
+
+  "2_locations": {
+    "work_dir": "C:\\Users\\A\\dev\\seaon-app\\mobile-web",
+    "git_root": "C:\\Users\\A\\dev\\seaon-app (main)",
+    "nas_copy": "Z:\\home\\seaon_work\\desktop_seah_on\\01_Flutter_App\\seaon_attendance\\mobile-web",
+    "live_site": "https://7416979-create.github.io/seaon-app/",
+    "sql_editor": "https://supabase.com/dashboard/project/gecuvqtchrnoqdssvjlc/sql/new",
+    "api_helpers": ". C:\\Users\\A\\dev\\seaon-app\\mobile-web\\supabase\\api-helpers.ps1 ; Show '라벨' (Rpc 함수명 @{인자=값})",
+    "deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File C:\\Users\\A\\dev\\seaon-app\\mobile-web\\scripts\\deploy.ps1 -CoAuthor '<이름 <메일>>'",
+    "dev_server": "preview_start name='seaon-web' → http://localhost:5173/seaon-app/"
+  },
+
+  "3_sql_editor_method": [
+    "SQL 편집기 탭은 하나만 쓴다. 멈추면 그 탭을 닫고 새로 하나만 연다.",
+    "긴 SQL(마이그레이션): PowerShell Set-Clipboard -Value ([IO.File]::ReadAllText(<파일>)) → 새 탭 /sql/new → 편집기 줄(약 500,135 또는 600,150)을 클릭 → ctrl+a → ctrl+v. 붙여넣기가 안 되면 한 번 더 클릭 후 ctrl+v.",
+    "짧은 SQL: javascript_tool로 monaco.editor.getModels()[0].setValue('...').",
+    "실행 전 반드시 javascript_tool로 monaco.editor.getModels()[0].getValue()를 읽어 내용이 정확한지 확인한다(한글 입력기 때문에 맨 앞에 'a'가 섞인 적이 있다. 섞였으면 setValue로 고친다). 화면에 한글처럼 보여도 getValue가 맞으면 정상이다.",
+    "실행: 편집기 클릭 후 ctrl+Return 또는 find 'Run button'. 'Potential issue detected'/'잠재적인 문제' 창이 뜨면 내용 재확인 후 '그래도 실행/Run query'.",
+    "결과: javascript_tool로 [role=gridcell] 텍스트를 읽는다. 대시보드가 번역 오류 화면으로 바뀌어도 쿼리는 실행됐을 수 있으니, 결과는 새 탭의 읽기 전용 쿼리나 API로 다시 확인한다."
+  ],
+
+  "4_tasks": [
+    {
+      "id": "L0",
+      "title": "준비",
+      "steps": [
+        "LESSONS_FOR_HAIKU.md 읽기 → 우편함의 두 파일 삭제",
+        "git status가 깨끗한지, origin/main이 최신인지 확인",
+        "[적용 전 스냅샷] api_helpers로는 직원 표를 못 읽으므로 SQL 편집기에서 읽기 전용 실행: select (select count(*) from employees) as staff, (select string_agg(emp_no || ':' || (link_used_at is not null), ', ' order by emp_no) from employees) as links, (select count(*) from admin_sessions) as admin_sessions; → claude-work\\l0-before.txt"
+      ],
+      "done_when": ["스냅샷 저장"]
+    },
+    {
+      "id": "L1",
+      "title": "마이그레이션 실서버 적용",
+      "file": "mobile-web/supabase/migrations/2026-10-11-fixes-holidays-backup.sql",
+      "steps": [
+        "3_sql_editor_method의 '긴 SQL' 방법으로 붙여넣기 → getValue 앞부분이 '-- 2026-10-11:'로 시작하는지 확인 → 실행 → 성공 확인",
+        "파일 맨 아래 확인 쿼리(주석 해제해서 setValue) 실행 → true, true, true, true, false",
+        "[적용 후] L0 스냅샷 쿼리 재실행 → 같은지 비교"
+      ],
+      "stop_and_report": ["실행 오류", "확인 쿼리 값이 다름", "스냅샷이 달라짐"],
+      "done_when": ["확인 쿼리 일치", "스냅샷 동일"]
+    },
+    {
+      "id": "L2",
+      "title": "타입과 API",
+      "steps": [
+        "src/data/types.ts: AttendanceRecord에 `fixed?: boolean; // corrected by an approved fix request`. 새 타입 `export type FixStatus = '대기' | '승인' | '반려' | '취소';` 와 `export interface AttendanceFix { id: string; empId: string; empName: string; date: string; checkIn?: string; checkOut?: string; reason: string; status: FixStatus; createdAt: string; decidedAt?: string; decisionNote?: string; }` 와 `export interface Holiday { date: string; name: string; }`",
+        "Api에 추가: listFixes(): Promise<AttendanceFix[]>; createFix(f: { date: string; checkIn?: string; checkOut?: string; reason: string }): Promise<AttendanceFix>; (checkIn/checkOut은 'HH:MM') cancelFix(id: string): Promise<void>; holidays(from: string, to: string): Promise<Holiday[]>;",
+        "AdminApi에 추가: listFixes(status?: FixStatus): Promise<AttendanceFix[]>; decideFix(id: string, status: '승인' | '반려', note?: string): Promise<void>; holidays(from: string, to: string): Promise<Holiday[]>; setHoliday(date: string, name: string): Promise<void>; deleteHoliday(date: string): Promise<void>; exportAll(): Promise<unknown>;",
+        "src/data/supabaseApi.ts 구현 (RPC 이름과 인자 이름은 마이그레이션 파일 그대로): emp_fixes(p_session), emp_fix_create(p_session,p_date,p_in,p_out,p_reason) – 빈 값은 null, emp_fix_cancel(p_session,p_id), get_holidays(p_session,p_from,p_to) – 직원은 userToken, 관리자는 adminToken, admin_fixes(p_session,p_status), admin_fix_decide(p_session,p_id,p_status,p_note), admin_set_holiday(p_session,p_day,p_name), admin_delete_holiday(p_session,p_day), admin_export(p_session)",
+        "src/data/demoApi.ts: Db에 fixes: AttendanceFix[], holidays: Holiday[] 추가. load()에서 없으면 [] 로 채운다(기존 데모 저장소 호환). 승인 시 records에 반영하고 fixed: true. exportAll은 Db 전체를 반환. 데모는 단순하게, 서버 규칙(31일, 미래 금지 등)만 같은 메시지로 흉내낸다."
+      ],
+      "done_when": ["tsc 통과"]
+    },
+    {
+      "id": "L3",
+      "title": "직원 화면: 출퇴근 정정 신청",
+      "steps": [
+        "src/pages/Leave.tsx: 기존 신청 카드 아래에 '출퇴근 정정 신청' 카드 추가: 날짜(date, 기본 오늘, max 오늘), 출근 시각(time, 선택), 퇴근 시각(time, 선택), 사유(필수), 버튼 '정정 신청'. 아래에 '정정 신청 내역' 목록(날짜, 출근→퇴근, 사유, 상태 칩, 대기면 '취소' 버튼).",
+        "Records 화면(src/pages/Records.tsx)의 각 날짜 줄에 작은 '정정' 버튼 → navigate('/leave', { state: { fixDate: r.date } }) → Leave에서 state.fixDate가 있으면 정정 카드 날짜를 그 날짜로 채우고 카드로 스크롤",
+        "정정된 기록(fixed)은 기록 화면에서 '정정됨' 칩 표시",
+        "글씨와 버튼은 기존보다 작게 만들지 않는다(장애인 직원 배려)"
+      ],
+      "done_when": ["tsc 통과", "L10에서 화면 확인"]
+    },
+    {
+      "id": "L4",
+      "title": "관리자 화면: 정정 승인",
+      "steps": [
+        "src/admin/AdminRequests.tsx: 화면 위에 탭 두 개 '휴가 신청' / '출퇴근 정정'. 정정 탭은 상태 필터(대기/승인/반려/취소/전체, 기본 대기), 표(신청일, 이름, 날짜, 출근→퇴근, 사유, 상태, 처리). 처리: '승인' / '반려'(반려는 window.prompt로 메모 선택 입력). 오류는 toast로 그대로 표시",
+        "src/admin/Dashboard.tsx: '승인 대기 신청' 숫자에 대기 중인 정정 건수도 더한다(또는 옆에 '정정 대기 N' 표시)",
+        "src/admin/AdminRecords.tsx: fixed 기록은 '정정됨' 칩"
+      ],
+      "done_when": ["tsc 통과", "L10에서 승인 시 기록 반영 확인"]
+    },
+    {
+      "id": "L5",
+      "title": "공휴일 관리",
+      "steps": [
+        "src/admin/AdminSettings.tsx: '공휴일' 카드 추가(근무 시간 카드 아래). 올해 공휴일 목록(날짜·이름·삭제 버튼), 추가 입력(날짜, 이름, '추가' 버튼). 설명: '공휴일은 근무일에서 빠집니다. 매년 초에 그 해 공휴일을 입력해 주세요.' 다른 카드의 저장과 섞이지 않게 별도 함수로",
+        "Dashboard: 오늘이 공휴일이면 상단에 notice '오늘은 공휴일(이름)입니다.'",
+        "실제 공휴일 목록을 코드에 하드코딩하지 않는다(정확성 책임). 대표가 입력"
+      ],
+      "done_when": ["tsc 통과", "L10에서 2099년 테스트 공휴일 추가·삭제 확인"]
+    },
+    {
+      "id": "L6",
+      "title": "월별 근태 요약",
+      "file": "src/admin/AdminRecords.tsx",
+      "steps": [
+        "기간 입력 옆에 빠른 버튼 '이번 달', '지난 달'(from/to를 그 달 1일~말일로, 이번 달은 오늘까지)",
+        "요약 표 열: 이름, 부서, 근무일수(기간 내 평일 중 공휴일 제외, 오늘 이후 날짜 제외), 출근일수, 지각, 휴가(승인된 연차·반차 일수 중 기간과 겹치는 날, 반차 0.5), 결근(근무일수 − 출근일수 − 휴가, 0 미만이면 0), 총 근무시간",
+        "공휴일은 adminApi.holidays(from,to), 휴가는 adminApi.listRequests('승인')에서 기간과 겹치는 것만",
+        "'요약 내려받기' 버튼: 요약 표를 CSV(BOM 포함, 기존 exportCsv와 같은 방식)로 '근태요약_from_to.csv'. 기존 '엑셀(CSV) 내려받기'(상세)는 그대로 둔다",
+        "계산 함수는 컴포넌트 밖 순수 함수로 두고 주석 한 줄"
+      ],
+      "done_when": ["tsc 통과", "L10에서 TST 데이터로 숫자 확인"]
+    },
+    {
+      "id": "L7",
+      "title": "큰 글씨 보기 (직원 화면)",
+      "steps": [
+        "src/pages/MyPage.tsx에 스위치 '큰 글씨로 보기'. localStorage 'seaon.largeText' = '1'/'0' (try/catch). 켜면 document.documentElement.classList.add('large-text')",
+        "src/main.tsx에서 앱 시작 시 저장값을 읽어 클래스 적용",
+        "src/styles.css에 .large-text 규칙: 기본 글자 크기 약 1.2배(html font-size 또는 body), 버튼 최소 높이 56px, 탭바 글자 크게, 대비가 낮은 muted 색은 조금 진하게. 관리자 화면(.admin)에는 영향 없게 '.large-text .page' 등 직원 화면 범위로 한정"
+      ],
+      "done_when": ["tsc 통과", "L10에서 켜고 끄기 확인(스크린샷)"]
+    },
+    {
+      "id": "L8",
+      "title": "데이터 백업",
+      "steps": [
+        "AdminSettings에 '데이터 백업' 카드: 설명 '직원·출퇴근·신청·공휴일·설정을 파일 하나로 내려받습니다. 개인 정보가 들어 있으니 NAS 같은 안전한 곳에만 보관하세요. 개인 링크는 들어 있지 않습니다.' 버튼 '백업 파일 내려받기' → adminApi.exportAll() → JSON.stringify(data, null, 2) → Blob → 'seaon-backup-YYYY-MM-DD.json' 다운로드",
+        "다운로드 후 toast '백업 파일을 내려받았습니다. NAS에 옮겨 보관하세요.'"
+      ],
+      "done_when": ["tsc 통과", "L10에서 내보낸 JSON에 linkToken/link_token 문자열이 없음 확인"]
+    },
+    {
+      "id": "L9",
+      "title": "README",
+      "steps": [
+        "'서버 연결 방법'에 추가: 새로 설치할 때 schema.sql 실행 후 supabase/migrations 폴더의 파일을 이름(날짜) 순서대로 모두 실행. 이미 운영 중이면 새 마이그레이션만 실행",
+        "기능 목록에 추가: 출퇴근 정정 신청·승인, 공휴일, 월별 요약, 큰 글씨, 데이터 백업"
+      ],
+      "done_when": ["README 반영"]
+    },
+    {
+      "id": "L10",
+      "title": "테스트",
+      "steps": [
+        "테스트 관리자 링크: SQL insert into admin_links (token) values ('tst' || substr(md5(random()::text), 1, 9)) returning token; (setValue → getValue 확인 → 실행 → gridcell로 읽기)",
+        "[API 테스트] api_helpers로: admin_enter(tst) → admin_create_employee TST201(phone 포함) → emp_enter(TST201 링크) → emp_fix_create(오늘, '09:00', '18:00', '테스트') 성공 → 같은 날짜 한 번 더 → '이미 대기 중' 오류 → 미래 날짜 → 오류 → admin_fixes('대기')에 보임 → admin_fix_decide 승인 → emp_records(이번 달)에 그날 fixed true, 출근 09:00/퇴근 18:00(한국 시간) → admin_set_holiday('2099-12-31','TST') → get_holidays('2099-12-01','2099-12-31')에 보임 → admin_delete_holiday → 사라짐 → admin_export 결과를 ConvertTo-Json -Depth 6 한 문자열에 'linkToken'과 'link_token'이 없는지 → Rpc _fix_json 호출 시 permission denied 인지",
+        "[화면 테스트] 개발 서버 + 내장 브라우저: 새 tst 관리자 링크로 접속(위에서 쓴 링크는 이미 사용됨) → 신청 승인의 '출퇴근 정정' 탭, 설정의 공휴일·백업 카드, 근태 기록의 이번 달/지난 달·요약 표가 오류 없이 뜨는지. 직원 화면은 TST202를 새로 만들어 그 링크로 접속 → 신청/연차의 정정 카드, 기록의 '정정' 버튼, 마이페이지 큰 글씨 켜기/끄기(스크린샷 2장)",
+        "콘솔 오류 확인",
+        "관리자 화면 로그아웃(테스트 세션들), API로 만든 테스트 관리자 세션은 admin_logout"
+      ],
+      "done_when": ["API 테스트 항목 전부 기대대로", "화면 오류 없음"]
+    },
+    {
+      "id": "L11",
+      "title": "정리",
+      "steps": [
+        "SQL: delete from employees where emp_no like 'TST%'; delete from admin_links where token like 'tst%'; delete from holidays where day >= '2099-01-01';  (정정·출퇴근 기록은 직원 삭제 시 함께 지워진다)",
+        "확인: API로 TST201·TST202 링크 emp_enter → '링크가 올바르지 않거나 만료'(행 없음), 사용한 tst 관리자 링크 admin_enter → '관리자 링크가 올바르지 않습니다'. 그리고 L0 스냅샷 쿼리 재실행 → 처음과 같음"
+      ],
+      "done_when": ["테스트 데이터 없음 확인", "스냅샷 동일"]
+    },
+    {
+      "id": "L12",
+      "title": "커밋·배포·보고",
+      "steps": [
+        "비밀 검사 → git add mobile-web (migrations 파일, HANDOFF_HAIKU_5.json 포함) → .env 미포함 확인 → git diff --cached --stat 검토 → 커밋 'Attendance corrections, holidays, monthly summary, large text, backup' → push",
+        "deploy.ps1 → Pages 성공 확인 → 실제 사이트 번들에 '출퇴근 정정', '백업 파일 내려받기', '큰 글씨' 문자열 확인 (실제 사이트에서 관리자 로그인 테스트는 하지 않는다)",
+        "REPORT_HAIKU_L.md(맨 위 'LESSONS_FOR_HAIKU 규칙 확인함', 결과 표, 테스트 결과, 대표님 안내: 공휴일 입력 방법, 백업 방법, 큰 글씨 켜는 곳, 정정 신청 흐름) → 커밋·푸시 → 우편함 복사 → NAS 동기화 → INDEX.txt 한 줄"
+      ],
+      "done_when": ["배포 확인", "보고 완료"]
+    }
+  ],
+
+  "5_stop_and_report_to_lead": [
+    "실제 직원(0001·0002) 데이터나 admin_sessions 개수가 바뀜",
+    "마이그레이션 오류 또는 확인 쿼리 불일치",
+    "_fix_json이 anon으로 호출됨(권한 누락) 또는 admin_export에 링크 토큰이 들어 있음",
+    "Pages 배포 실패",
+    "이 문서 범위 밖의 변경이 필요해 보일 때"
+  ]
+}
